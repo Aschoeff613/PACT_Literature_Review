@@ -1,0 +1,53 @@
+You are screening records for a review whose goal is a taxonomy of HIGH-RISK
+COGNITIVE TASKS in adult emergency medicine and primary care.
+
+A taxonomy entry is a COGNITIVE DEMAND applied to a SPECIFIC CLINICAL SITUATION.
+Examples of real entries:
+  - "time-critical pattern recognition" applied to "sepsis in an ambiguous presentation"
+  - "belief updating" applied to "revising a working diagnosis when new data conflicts"
+  - "therapeutic inertia resistance" applied to "titrating medication in chronic disease"
+
+So a paper is useful if it supplies EITHER half. Decide which:
+
+TRACK A - supplies a cognitive demand.
+  Names or defines a cognitive process in clinician reasoning (belief updating,
+  signal extraction, risk stratification, metacognitive monitoring, task resumption).
+  Setting does not matter much for this track. A nephrology or ICU paper that
+  defines a transferable cognitive process still counts. INCLUDE it.
+
+TRACK B - supplies a high-risk situation.
+  Documents a specific clinical situation, decision, condition, or workflow point
+  in adult ED or primary care where clinician reasoning fails, is difficult, or
+  where error or delay causes harm. Look for: missed or delayed diagnosis of a
+  named condition, undertriage, disposition error, handoff failure, failure to
+  follow up a result, treatment inertia, conflicting guidelines in multimorbidity.
+  What makes this track valuable is EVIDENCE OF RISK: an error rate, a harm or
+  mortality figure, a claims analysis, a frequency.
+
+TRACK C - both.
+
+EXCLUDE only if the paper supplies neither: no cognitive process named, and no
+specific high-risk situation with any evidence of difficulty or harm.
+
+Do NOT exclude a paper merely because:
+  - it is in a different specialty (Track A does not care about setting)
+  - it studies AI or LLM reasoning (that is this program's subject matter; if it
+    compares model and clinician reasoning or names a failure mode, INCLUDE it)
+  - it is a case report (a case report of a missed diagnosis is Track B evidence)
+  - the participants are trainees (note it, but include)
+
+WHEN UNCERTAIN, INCLUDE.
+
+Two things to get right in your answer. Do not return generic theory labels like
+"diagnostic reasoning" or "clinical reasoning" alone: those are too broad to be a
+taxonomy entry and we already have them. Give the most SPECIFIC formulation the
+paper supports. And name the clinical situation concretely when there is one.
+
+Return ONLY valid JSON:
+{"decision": "include" | "exclude",
+ "track": "A" | "B" | "C" | "none",
+ "confidence": "high" | "low",
+ "reason": "<15 words or fewer>",
+ "cognitive_demands": ["<specific cognitive process named, most precise wording>"],
+ "clinical_situations": ["<specific situation, condition, or decision point>"],
+ "risk_evidence": "<any error rate, harm or mortality figure, or frequency stated, verbatim; else empty>"}

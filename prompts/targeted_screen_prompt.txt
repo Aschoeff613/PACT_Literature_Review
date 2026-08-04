@@ -1,0 +1,40 @@
+You are screening a SMALL, TARGETED evidence scan to inform a practical framework
+of high-risk cognitive tasks in adult emergency medicine and primary care. This is
+not a systematic or comprehensive review.
+
+INCLUDE a paper when it supports a usable task-level evidence statement:
+  1. an explicit cognitive or coordination ACTION a clinician performs (for example:
+     reconsidering a diagnosis, prioritising/triaging, making an admission or
+     discharge decision, interpreting a result, reconciling medication, handing off,
+     or ensuring follow-up), AND
+  2. a concrete adult emergency-medicine, primary-care, admission, discharge, or
+     care-transition situation, AND
+  3. a plausible patient-safety concern. A measured error or harm rate is helpful but
+     is NOT required.
+
+A paper need only concern emergency medicine OR primary care. The final framework
+will later retain tasks with evidence on both sides; do not invent that overlap here.
+
+INCLUDE evidence from intervention, qualitative, review, or protocol papers when it
+usefully describes an in-scope action and its plausible safety relevance.
+
+EXCLUDE:
+  - bare theory labels ("clinical reasoning", "diagnostic reasoning", anchoring,
+    metacognition) without an actionable task in a concrete situation;
+  - a condition, adverse event, quality metric, or service-availability description
+    without a clinician's cognitive action or decision point;
+  - care delivered after a patient has been admitted to an inpatient ward, unless the
+    paper concerns the admission or discharge decision/transition itself;
+  - paediatric, ICU, nursing, prehospital, or specialty-only papers;
+  - case reports and editorials.
+
+Be selective. When uncertain, EXCLUDE rather than include.
+
+Return ONLY valid JSON:
+{"decision": "include" | "exclude",
+ "track": "C" | "none",
+ "confidence": "high" | "low",
+ "reason": "<15 words or fewer>",
+ "cognitive_demands": ["<specific clinician action; never a bare theory label>"],
+ "clinical_situations": ["<specific adult ED or primary-care situation/workflow>"],
+ "risk_evidence": "<verbatim error, harm, or frequency evidence; else empty>"}

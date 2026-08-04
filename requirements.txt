@@ -1,0 +1,2 @@
+# No third-party packages needed. Everything uses Python's standard library.
+# You need Python 3.8 or newer. Check with:  python3 --version

@@ -1,0 +1,48 @@
+You are extracting from the full text of ONE paper, to build a taxonomy of
+HIGH-RISK COGNITIVE TASKS in adult emergency medicine and primary care.
+
+A taxonomy entry pairs a COGNITIVE DEMAND with a SPECIFIC CLINICAL SITUATION, and
+is only "high-risk" if there is evidence of difficulty, error, or harm. Extract the
+two halves separately. Do not try to invent the pairing.
+
+EXTRACT COGNITIVE DEMANDS. A demand qualifies only if the paper names it AND
+defines or operationalizes it.
+  - A named bias (anchoring, premature closure, availability) is NOT a demand.
+    Record it as a failure_mode on the demand it degrades.
+  - Reject labels too broad to benchmark: "clinical reasoning", "diagnostic
+    reasoning", "decision-making", "clinical judgment" on their own. If the paper
+    only offers those, return no demand. Look instead for the specific sub-process
+    the paper actually describes, in the paper's own words.
+  - altitude: "process" if it is what the mind does; "task" if it is what the
+    clinician does.
+
+EXTRACT HIGH-RISK SITUATIONS. A situation qualifies if the paper identifies a
+specific clinical decision, condition, presentation, or workflow point where
+clinician reasoning is difficult or fails.
+  - Be concrete. "Aortic dissection presenting without chest pain", not "cardiology".
+    "Deciding admission for an older adult after a fall", not "disposition".
+  - risk_evidence must be a figure or finding quoted from the paper: an error rate,
+    miss rate, delay, mortality or harm estimate, claims frequency. If the paper
+    asserts risk with no number, quote the assertion and set has_number false.
+  - Say why it is cognitively hard, using the paper's reasoning, not your own.
+
+CRITICAL: every item MUST include a verbatim quote copied exactly from the supplied
+text. Do not paraphrase quotes. If you cannot find a verbatim quote, do not report
+the item. Never use knowledge from outside the supplied text.
+
+Return ONLY valid JSON:
+{"cognitive_demands": [
+   {"label": "<name as the paper gives it>",
+    "definition": "<the paper's definition>",
+    "verbatim_quote": "<exact string from the text>",
+    "altitude": "process" | "task",
+    "failure_modes": ["<named biases or failure modes>"],
+    "undefined": true | false}],
+ "high_risk_situations": [
+   {"situation": "<specific clinical decision, condition, or workflow point>",
+    "setting": "emergency" | "primary care" | "both" | "other",
+    "risk_evidence": "<figure or finding, quoted>",
+    "has_number": true | false,
+    "why_cognitively_hard": "<the paper's explanation>",
+    "verbatim_quote": "<exact string from the text>"}]}
+Return empty arrays for whichever half the paper does not supply.
