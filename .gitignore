@@ -1,8 +1,12 @@
 data/fulltext/
+data/*fulltext*/
 data/*.csv
+data/*.log
 !data/01_search_log.csv
 !data/07_canonical_constructs.csv
 .env
 .env.*
 __pycache__/
 *.pyc
+*.zip
+.DS_Store

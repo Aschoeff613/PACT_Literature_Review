@@ -143,8 +143,33 @@ by what the models said. Then read each abstract and type `include` or `exclude`
 Save the file as CSV when done.
 
 This is about 4 to 6 hours of reading. No PDFs, no library access, just abstracts.
-Two people doing the first 100 each and comparing is better than one person doing all
-300, if you have two people.
+For two independent ratings per paper, one reviewer can complete all 300 while
+additional reviewers divide the same records among themselves. Resolve disagreements
+by discussion or a designated adjudicator.
+
+#### Browser-based validation reviewers
+
+Two self-contained browser reviewers are included for the current 300-record sample:
+
+- `pact_validation_review_001-150.html`
+- `pact_validation_review_151-300.html`
+
+Download or open either HTML file in a browser and select **Proceed to screening**.
+Each file saves progress in that browser and exports a reviewed CSV. Blue highlighting
+marks possible setting evidence; amber highlighting marks possible cognitive or clinical
+task evidence. These are navigation cues only, not screening decisions.
+
+The operational screening question is: *Does the paper actually examine clinician
+reasoning, decision-making, communication, or other judgment-dependent work?* A clinical
+choice merely occurring in the background is not enough. For example, a comparison of
+whether antibiotic A is more effective than antibiotic B is excluded, while a study of
+why clinicians select A rather than B is included.
+
+To rebuild both browser files from the current validation sample, run:
+
+```
+python3 scripts/split_reviewer_html.py
+```
 
 ### Step 5 — get the full text
 
@@ -243,6 +268,7 @@ Commit these:
 
 - `README.md`, `protocol.md`, `requirements.txt`
 - everything in `scripts/` and `prompts/`
+- both `pact_validation_review_*.html` browser reviewers
 - `data/01_search_log.csv` (the exact search and date)
 - `data/08_candidate_tasks.csv` and `data/08a_open_coding.csv` (the emergent task list and its audit trail)
 - your metrics output from step 7, including the sensitivity figure even if it is low
