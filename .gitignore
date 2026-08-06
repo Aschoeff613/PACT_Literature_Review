@@ -1,0 +1,8 @@
+data/fulltext/
+data/*.csv
+!data/01_search_log.csv
+!data/07_canonical_constructs.csv
+.env
+.env.*
+__pycache__/
+*.pyc

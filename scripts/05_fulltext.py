@@ -10,7 +10,7 @@ short worklist of the ones a human has to fetch through the library.
 
 Run it with:   python3 scripts/05_fulltext.py
 """
-import os, re, sys, json, time, urllib.parse
+import argparse, os, re, sys, json, time, urllib.parse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import fetch, read_csv, write_csv, need, DATA, EMAIL, EUTILS
 
@@ -39,12 +39,25 @@ def unpaywall(doi):
     return ""
 
 if __name__ == "__main__":
-    rows = read_csv(need(INPUT))
-    os.makedirs(FTDIR, exist_ok=True)
-    got, worklist = 0, []
+    parser = argparse.ArgumentParser(description="Retrieve legally available full text and create a manual worklist.")
+    parser.add_argument("--input", default=INPUT, help="candidate includes CSV")
+    parser.add_argument("--fulltext-dir", default=FTDIR, help="directory for retrieved PMC text")
+    parser.add_argument("--worklist-output", default=os.path.join(DATA,"05_manual_worklist.csv"),
+                        help="manual retrieval worklist CSV")
+    parser.add_argument("--start", type=int, default=1, help="1-based first input row")
+    parser.add_argument("--limit", type=int, default=None, help="optional number of input rows to process")
+    args = parser.parse_args()
+    rows = read_csv(need(args.input))
+    rows = rows[args.start - 1:]
+    if args.limit:
+        rows = rows[:args.limit]
+    os.makedirs(args.fulltext_dir, exist_ok=True)
+    prior = read_csv(args.worklist_output) if os.path.exists(args.worklist_output) else []
+    worklist = {r["pmid"]: r for r in prior}
+    got = 0
     for i, r in enumerate(rows, 1):
         pmid, pmc, doi = r["pmid"], r.get("pmc",""), r.get("doi","")
-        out = os.path.join(FTDIR, f"{pmid}.txt")
+        out = os.path.join(args.fulltext_dir, f"{pmid}.txt")
         if os.path.exists(out) and os.path.getsize(out) > 3000:
             got += 1; continue
         text = ""
@@ -59,14 +72,14 @@ if __name__ == "__main__":
             print(f"  [{i}/{len(rows)}] {pmid}: {len(text):,} chars from PMC")
         else:
             link = unpaywall(doi) if doi else ""
-            worklist.append({"pmid":pmid,"title":r["title"],"year":r.get("year",""),
+            worklist[pmid] = {"pmid":pmid,"title":r["title"],"year":r.get("year",""),
                 "journal":r.get("journal",""),"doi":doi,
                 "free_pdf_link": link,
                 "action": "download this free PDF" if link else "get via library proxy",
-                "save_as": f"data/fulltext/{pmid}.txt"})
+                "save_as": os.path.join(args.fulltext_dir, f"{pmid}.txt")}
             print(f"  [{i}/{len(rows)}] {pmid}: needs manual retrieval" + (" (free link found)" if link else ""))
         time.sleep(0.34)
-    write_csv(os.path.join(DATA,"05_manual_worklist.csv"), worklist,
+    write_csv(args.worklist_output, list(worklist.values()),
         ["pmid","title","year","journal","doi","free_pdf_link","action","save_as"])
     print(f"\n  automatic: {got}    manual: {len(worklist)}")
     print("  Open data/05_manual_worklist.csv. Work down it, save each as plain text")

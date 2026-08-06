@@ -16,6 +16,7 @@ or about $8.50 if you route it through each vendor's Batch API (50% off, and thi
 job has no reason to be interactive). See README for the full breakdown.
 """
 import argparse, os, sys, json, time, urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import read_csv, write_csv, need, DATA
 
@@ -130,6 +131,31 @@ def ask_anthropic(record):
 def as_text(r):
     return f"TITLE: {r['title']}\nJOURNAL: {r['journal']} ({r['year']})\nABSTRACT: {r['abstract'] or '[no abstract available]'}"
 
+def screen_one(r):
+    """Screen one record with both models. Safe to run alongside other records."""
+    txt = as_text(r)
+    row = {k:r[k] for k in ("screen_order","batch","pmid","year","journal","title","doi","pmc")}
+    row["source_setting"] = r.get("source_setting", "")
+    row["abstract"] = r.get("abstract", "")
+    for name, fn in (("gpt", ask_openai), ("claude", ask_anthropic)):
+        try:
+            a = fn(txt)
+            row[name+"_decision"]   = a.get("decision", "")
+            row[name+"_confidence"] = a.get("confidence", "")
+            row[name+"_reason"]     = a.get("reason", "")
+            row[name+"_track"]      = a.get("track", "")
+            row[name+"_demands"]    = "; ".join(a.get("cognitive_demands") or [])
+            row[name+"_situations"] = "; ".join(a.get("clinical_situations") or [])
+            row[name+"_risk"]       = a.get("risk_evidence", "")
+        except Exception as e:
+            row[name+"_decision"] = "ERROR"; row[name+"_reason"] = str(e)[:120]
+        time.sleep(0.2)
+    g, c = row.get("gpt_decision"), row.get("claude_decision")
+    row["agree"] = "yes" if g == c else "no"
+    row["needs_human"] = "yes" if (g != c or "low" in (row.get("gpt_confidence", ""),
+                                                       row.get("claude_confidence", ""))) else "no"
+    return row
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Screen literature-review records with two models.")
     parser.add_argument("limit", nargs="?", type=int, help="optional number of records to screen")
@@ -140,6 +166,8 @@ if __name__ == "__main__":
     parser.add_argument("--prompt", default=None, help="alternative screening prompt file")
     parser.add_argument("--start", type=int, default=1,
                         help="1-based first record to screen (default: 1)")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="number of records to screen concurrently (default: 1)")
     args = parser.parse_args()
     limit = args.limit
     if args.prompt:
@@ -148,39 +176,27 @@ if __name__ == "__main__":
     rows = rows[args.start - 1:]
     if limit: rows = rows[:limit]
     outpath = args.output
-    done = {r["pmid"] for r in read_csv(outpath)} if os.path.exists(outpath) else set()
-    results = read_csv(outpath) if os.path.exists(outpath) else []
-    print(f"  {len(rows)} to screen, {len(done)} already done (safe to re-run after a crash)")
-    for i, r in enumerate(rows, 1):
-        if r["pmid"] in done: continue
-        txt = as_text(r)
-        row = {k:r[k] for k in ("screen_order","batch","pmid","year","journal","title","doi","pmc")}
-        row["source_setting"] = r.get("source_setting", "")
-        row["abstract"] = r.get("abstract","")   # keep it in the output, so the file stands alone
-        for name, fn in (("gpt", ask_openai), ("claude", ask_anthropic)):
-            try:
-                a = fn(txt)
-                row[name+"_decision"]   = a.get("decision","")
-                row[name+"_confidence"] = a.get("confidence","")
-                row[name+"_reason"]     = a.get("reason","")
-                row[name+"_track"]      = a.get("track","")
-                row[name+"_demands"]    = "; ".join(a.get("cognitive_demands") or [])
-                row[name+"_situations"] = "; ".join(a.get("clinical_situations") or [])
-                row[name+"_risk"]       = a.get("risk_evidence","")
-            except Exception as e:
-                row[name+"_decision"] = "ERROR"; row[name+"_reason"] = str(e)[:120]
-            time.sleep(0.2)
-        g, c = row.get("gpt_decision"), row.get("claude_decision")
-        row["agree"] = "yes" if g == c else "no"
-        row["needs_human"] = "yes" if (g != c or "low" in (row.get("gpt_confidence",""),
-                                                           row.get("claude_confidence",""))) else "no"
-        results.append(row)
-        if i % 25 == 0 or i == len(rows):
-            write_csv(outpath, results, ["screen_order","batch","source_setting","pmid","year","journal","title","abstract","doi","pmc",
+    # A row is resumable only when both models actually returned a screening
+    # decision. This prevents a missing local API key or interrupted request from
+    # leaving a blank row that a later run would incorrectly treat as complete.
+    prior = read_csv(outpath) if os.path.exists(outpath) else []
+    complete = lambda r: (r.get("gpt_decision", "").strip() in ("include", "exclude")
+                          and r.get("claude_decision", "").strip() in ("include", "exclude"))
+    results = [r for r in prior if complete(r)]
+    done = {r["pmid"] for r in results}
+    pending = [r for r in rows if r["pmid"] not in done]
+    print(f"  {len(pending)} to screen, {len(done)} already done (safe to re-run after a crash)")
+    with ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
+        futures = [pool.submit(screen_one, r) for r in pending]
+        for i, future in enumerate(as_completed(futures), 1):
+            results.append(future.result())
+            if i % 25 == 0 or i == len(pending):
+                results.sort(key=lambda r: (int(r.get("screen_order") or 0), r.get("pmid", "")))
+                write_csv(outpath, results, ["screen_order","batch","source_setting","pmid","year","journal","title","abstract","doi","pmc",
                 "gpt_decision","gpt_track","gpt_confidence","gpt_reason","gpt_demands","gpt_situations","gpt_risk",
                 "claude_decision","claude_track","claude_confidence","claude_reason","claude_demands","claude_situations","claude_risk",
                 "agree","needs_human"])
-            print(f"    {i}/{len(rows)} screened")
+                print(f"    {i}/{len(pending)} screened")
     inc = sum(1 for r in results if "include" in (r.get("gpt_decision",""), r.get("claude_decision","")))
     dis = sum(1 for r in results if r.get("agree")=="no")
     print(f"\n  flagged include by at least one model: {inc}")
