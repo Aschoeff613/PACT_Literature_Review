@@ -4,6 +4,7 @@ data/*.csv
 data/*.log
 !data/01_search_log.csv
 !data/07_canonical_constructs.csv
+!data/11_neutral_sample_log.csv
 .env
 .env.*
 __pycache__/

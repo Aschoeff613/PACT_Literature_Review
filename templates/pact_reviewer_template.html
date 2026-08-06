@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PACT validation review — 300 records</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --panel:#ffffff; --ink:#1c1c1a; --ink-soft:#5c5c58;
+    --border:#e4e2dc; --accent:#2f6f4f; --accent-soft:#e6f2ec;
+    --danger:#a13a2f; --danger-soft:#f7e9e7; --amber:#a3760f; --amber-soft:#faf1e0;
+    --focus:#3b6ea5;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 14px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#17171a; --panel:#212024; --ink:#eeeeec; --ink-soft:#a6a4a0;
+      --border:#34333a; --accent:#59b989; --accent-soft:#173226;
+      --danger:#e08072; --danger-soft:#33201d; --amber:#e0b361; --amber-soft:#332c17;
+      --focus:#7fa9d6;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box;}
+  html, body{height:100%;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh;
+  }
+  .wrap{max-width:1400px; margin:0 auto; padding:16px 22px 16px; height:100vh; display:flex; flex-direction:column;}
+
+  header{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:10px; flex-wrap:wrap; flex:0 0 auto;}
+  header h1{font-size:21px; margin:0; font-weight:650;}
+  header .sub{font-size:14px; color:var(--ink-soft);}
+
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap;}
+  .toolbar button, .toolbar label.filebtn{
+    font:inherit; font-size:14.5px; padding:8px 14px; border-radius:8px;
+    border:1px solid var(--border); background:var(--panel); color:var(--ink);
+    cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+  }
+  .toolbar button:hover, .toolbar label.filebtn:hover{border-color:var(--focus);}
+  .toolbar input[type=file]{display:none;}
+
+  .layout{display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:20px; flex:1 1 auto; min-height:0;}
+  .main-col{display:flex; flex-direction:column; min-height:0;}
+  .side-col{display:flex; flex-direction:column; gap:10px; min-height:0; overflow:auto;}
+
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:11px 14px; box-shadow:var(--shadow);
+  }
+  .panel h3{font-size:12px; margin:0 0 6px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft);}
+
+  .progress-bar{height:8px; border-radius:5px; background:var(--border); overflow:hidden; margin-bottom:6px;}
+  .progress-fill{height:100%; background:var(--accent); width:0%; transition:width .2s ease;}
+  .progress-label{font-size:13.5px; color:var(--ink-soft); font-variant-numeric:tabular-nums; margin-bottom:6px;}
+
+  .stats{display:flex; flex-direction:column; gap:4px; font-size:13.5px; color:var(--ink-soft);}
+  .stats b{color:var(--ink); font-variant-numeric:tabular-nums;}
+  .dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:1px;}
+  .dot.inc{background:var(--accent);} .dot.exc{background:var(--danger);} .dot.rem{background:var(--ink-soft);}
+
+  /* --- Screening guide panel ------------------------------------------ */
+  .guide{padding:10px 13px 11px;}
+  .guide-title{font-size:11.5px; margin:0 0 7px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--ink-soft);}
+
+  .guide-question{
+    padding:7px 10px; margin-bottom:8px; border-radius:8px;
+    background:var(--bg); border:1px solid var(--border);
+  }
+  .guide-question .qlabel{
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--ink-soft); margin-bottom:2px;
+  }
+  .guide-question p{margin:0; font-size:13.5px; line-height:1.28; font-weight:650; color:var(--ink);}
+
+  .guide-section{padding:0 0 6px 9px; margin-bottom:6px; border-left:2.5px solid var(--border);}
+  .guide-section:last-of-type{margin-bottom:0;}
+  .guide-section.gs-include{border-left-color:var(--accent);}
+  .guide-section.gs-exclude{border-left-color:var(--danger);}
+  .guide-section.gs-scope{border-left-color:var(--border);}
+
+  .gs-label{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px;}
+  .gs-include .gs-label{color:var(--accent);}
+  .gs-exclude .gs-label{color:var(--danger);}
+  .gs-scope .gs-label{color:var(--ink-soft);}
+
+  .gs-desc{font-size:12px; line-height:1.36; color:var(--ink); margin:0 0 5px;}
+  .gs-desc:last-child{margin-bottom:0;}
+  .gs-caption{font-size:10.5px; color:var(--ink-soft); margin:0 0 3px;}
+  .gs-caption-inline{font-size:10.5px; color:var(--ink-soft); font-weight:600;}
+
+  .tag-row{display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px;}
+  .tag-row:last-child{margin-bottom:0;}
+  .tag{
+    font-size:11px; padding:2px 7px; border-radius:6px; line-height:1.3;
+    background:var(--bg); border:1px solid var(--border); color:var(--ink);
+  }
+  .gs-include .tag{border-color:color-mix(in srgb, var(--accent) 45%, var(--border));}
+  .gs-exclude .tag{border-color:color-mix(in srgb, var(--danger) 45%, var(--border));}
+
+  .gs-scope .gs-desc{color:var(--ink-soft); font-size:11.5px;}
+
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:22px 26px; box-shadow:var(--shadow); flex:1 1 auto; display:flex; flex-direction:column; min-height:0; overflow:auto;
+  }
+  .meta{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; flex:0 0 auto;}
+  .chip{
+    font-size:13px; padding:4px 11px; border-radius:999px; border:1px solid var(--border);
+    color:var(--ink-soft); background:var(--bg);
+  }
+  .chip.setting-ed{color:var(--danger); border-color:var(--danger); background:var(--danger-soft);}
+  .chip.setting-pc{color:var(--accent); border-color:var(--accent); background:var(--accent-soft);}
+  .chip.decided-include{color:var(--accent); border-color:var(--accent); background:var(--accent-soft);}
+  .chip.decided-exclude{color:var(--danger); border-color:var(--danger); background:var(--danger-soft);}
+
+  h2.title{font-size:23px; line-height:1.32; margin:0 0 14px; font-weight:650; flex:0 0 auto;}
+  .abstract{font-size:17px; line-height:1.6; color:var(--ink); white-space:pre-wrap; overflow:auto; flex:1 1 auto;}
+  .abstract.empty{color:var(--ink-soft); font-style:italic;}
+  mark.candidate-cue{
+    color:inherit; background:var(--amber-soft); border-bottom:2px solid var(--amber);
+    border-radius:2px; padding:0 .08em; box-decoration-break:clone; -webkit-box-decoration-break:clone;
+  }
+  .candidate-evidence{
+    display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin:0 0 13px;
+    padding:7px 10px; border-left:3px solid var(--amber); border-radius:0 7px 7px 0;
+    background:var(--amber-soft); color:var(--ink-soft); font-size:12.5px; line-height:1.35;
+  }
+  .candidate-evidence strong{color:var(--ink); font-size:12px; text-transform:uppercase; letter-spacing:.035em;}
+  .candidate-evidence .models{color:var(--amber); font-weight:700;}
+
+  .notes{margin-top:14px; flex:0 0 auto;}
+  .notes label{font-size:13px; color:var(--ink-soft); display:block; margin-bottom:5px;}
+  .notes textarea{
+    width:100%; min-height:42px; resize:vertical; font:inherit; font-size:14.5px;
+    padding:9px 11px; border-radius:8px; border:1px solid var(--border);
+    background:var(--bg); color:var(--ink);
+  }
+
+  .actions{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; flex:0 0 auto;}
+  .actions button{
+    flex:1; min-width:150px; font:inherit; font-size:17px; font-weight:600;
+    padding:15px 18px; border-radius:10px; border:1px solid transparent; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-include{background:var(--accent); color:#fff;}
+  .btn-include:hover{filter:brightness(1.06);}
+  .btn-exclude{background:var(--danger); color:#fff;}
+  .btn-exclude:hover{filter:brightness(1.06);}
+  .btn-skip{background:transparent; border-color:var(--border); color:var(--ink-soft); flex:0 0 auto; min-width:0; padding:15px 20px;}
+  kbd{
+    font-family:inherit; font-size:12px; padding:1px 7px; border-radius:5px;
+    background:rgba(255,255,255,.22); border:1px solid rgba(255,255,255,.35);
+  }
+  .btn-skip kbd{background:var(--bg); border-color:var(--border); color:var(--ink-soft);}
+
+  .navrow{display:flex; justify-content:space-between; align-items:center; margin-top:10px; flex:0 0 auto;}
+  .navrow button{
+    font:inherit; font-size:14px; padding:9px 16px; border-radius:8px;
+    border:1px solid var(--border); background:var(--panel); color:var(--ink-soft); cursor:pointer;
+  }
+  .navrow button:disabled{opacity:.4; cursor:default;}
+  .navrow button:hover:not(:disabled){border-color:var(--focus); color:var(--ink);}
+
+  .jump{display:flex; align-items:center; gap:6px; font-size:14px; color:var(--ink-soft);}
+  .jump input{
+    width:60px; font:inherit; font-size:14px; padding:6px 7px; border-radius:6px;
+    border:1px solid var(--border); background:var(--panel); color:var(--ink); text-align:center;
+  }
+
+  .done-banner{
+    background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent);
+    border-radius:10px; padding:10px 14px; font-size:13.5px;
+  }
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(8px);
+    background:var(--ink); color:var(--bg); font-size:13px; padding:10px 18px; border-radius:999px;
+    opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease; z-index:50;
+    box-shadow:var(--shadow);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  ::selection{background:var(--focus); color:#fff;}
+
+  @media (max-width: 980px){
+    .wrap{height:auto;}
+    .layout{grid-template-columns:1fr;}
+    .side-col{order:-1;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>PACT validation review</h1>
+      <div class="sub">300-record human validation sample &middot; step 4 of the literature pipeline</div>
+    </div>
+    <div class="toolbar">
+      <label class="filebtn" title="Load a CSV you exported earlier to pick up where you left off">
+        ⤒ Resume from file
+        <input type="file" id="resumeInput" accept=".csv">
+      </label>
+      <button id="exportBtn">⤓ Export CSV</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="main-col">
+      <div class="card">
+        <div class="meta">
+          <span class="chip" id="chipPmid"></span>
+          <span class="chip" id="chipYear"></span>
+          <span class="chip" id="chipJournal"></span>
+          <span class="chip" id="chipSetting"></span>
+          <span class="chip" id="chipDecided" style="display:none;"></span>
+        </div>
+        <h2 class="title" id="fieldTitle"></h2>
+        <div class="candidate-evidence" id="candidateEvidence" hidden>
+          <strong>Candidate cue</strong>
+          <span id="candidateEvidenceText"></span>
+        </div>
+        <div class="abstract" id="fieldAbstract"></div>
+
+        <div class="notes">
+          <label for="notesInput">Notes (optional)</label>
+          <textarea id="notesInput" placeholder="Why, if it's not obvious later — e.g. wrong specialty, no cognitive construct, case report only"></textarea>
+        </div>
+
+        <div class="actions">
+          <button class="btn-exclude" id="excludeBtn">✕ Exclude <kbd>E</kbd></button>
+          <button class="btn-skip" id="skipBtn" title="Leave blank and move on">Skip <kbd>S</kbd></button>
+          <button class="btn-include" id="includeBtn">✓ Include <kbd>I</kbd></button>
+        </div>
+      </div>
+
+      <div class="navrow">
+        <button id="prevBtn">← Previous</button>
+        <div class="jump">
+          <span>Go to</span>
+          <input type="number" id="jumpInput" min="1" max="300">
+          <span>/ 300</span>
+        </div>
+        <button id="nextBtn">Next unreviewed →</button>
+      </div>
+    </div>
+
+    <div class="side-col">
+      <div id="doneBanner" class="done-banner" style="display:none;">
+        All 300 records have a decision. Export whenever you're ready — you can still go back
+        and change an answer with Prev/Next.
+      </div>
+
+      <div class="panel">
+        <h3>Progress</h3>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-label" id="progressLabel">0 / 300 reviewed</div>
+        <div class="stats">
+          <span><span class="dot inc"></span>Include: <b id="statInclude">0</b></span>
+          <span><span class="dot exc"></span>Exclude: <b id="statExclude">0</b></span>
+          <span><span class="dot rem"></span>Remaining: <b id="statRemaining">300</b></span>
+        </div>
+      </div>
+
+      <div class="panel guide">
+        <h3 class="guide-title">Screening guide</h3>
+
+        <div class="guide-question">
+          <div class="qlabel">Primary question</div>
+          <p>Is this paper about a cognitive task during active clinical care?</p>
+        </div>
+
+        <div class="guide-section gs-include">
+          <div class="gs-label">Include</div>
+          <p class="gs-desc">A cognitive task performed during active clinical care.</p>
+          <p class="gs-caption">The clinician must:</p>
+          <div class="tag-row">
+            <span class="tag">notice</span><span class="tag">interpret</span>
+            <span class="tag">decide</span><span class="tag">communicate</span>
+            <span class="tag">prioritise</span><span class="tag">reconcile</span>
+            <span class="tag">follow up</span>
+          </div>
+          <p class="gs-desc gs-inline"><span class="gs-caption-inline">Active clinical care:</span> adult
+            emergency medicine &middot; adult primary care &middot; admission/discharge decisions
+            &middot; transitions, handoffs, med review</p>
+        </div>
+
+        <div class="guide-section gs-exclude">
+          <div class="gs-label">Exclude</div>
+          <p class="gs-desc">No clinician cognitive work during active care — e.g. papers only about
+            a drug, diagnosis, test, risk score, AI tool, outcome, or quality metric; or education/theory
+            with no real clinical-care situation.</p>
+        </div>
+
+        <div class="guide-section gs-scope">
+          <div class="gs-label">Out of scope</div>
+          <p class="gs-desc">Paediatric care &middot; ICU or inpatient care after admission &middot;
+            prehospital care &middot; nursing-only or specialty-only care &middot; case reports &middot; editorials.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script id="seed-data" type="application/json">[]</script>
+<script>
+(function(){
+  const COLUMNS = ["pmid","year","journal","title","abstract","source_setting",
+                   "human_decision","human_notes","_ai_gpt","_ai_claude"];
+  const CANDIDATE_CUES = [
+    {weight:5, pattern:/\b(?:clinical|diagnostic|medical)\s+(?:reasoning|decision(?:[-\s]?making)?|judg(?:e|ment)|assessment|interpretation)\b/i},
+    {weight:5, pattern:/\b(?:hand ?off|handover|follow[- ]?up|medication reconciliation|risk stratification|triage|disposition)\b/i},
+    {weight:4, pattern:/\b(?:clinician|physician|doctor|prescriber)s?\b/i},
+    {weight:4, pattern:/\b(?:diagnos(?:is|tic|e)|interpret(?:ing|ation)?|decid(?:e|ing|ion)|recogn(?:ise|ize|ition)|prioriti[sz](?:e|ing|ation)|communicat(?:e|ing|ion)|reconcil(?:e|ing|iation)|monitor(?:ing)?)\b/i},
+    {weight:3, pattern:/\b(?:error|miss(?:ed|ing)|delay(?:ed)?|failure|harm|adverse event|unsafe|misdiagnos(?:is|ed)|undertriage|overtriage)\b/i}
+  ];
+
+  const seed = JSON.parse(document.getElementById('seed-data').textContent);
+  // Working state lives in memory only (no localStorage/sessionStorage in this
+  // environment) - "saving" means exporting the CSV, and "resuming" means
+  // loading that CSV back in via the file picker below.
+  let records = seed.map(r => ({
+    pmid: r.pmid, year: r.year, journal: r.journal, title: r.title,
+    abstract: r.abstract, source_setting: r.source_setting,
+    human_decision: (r.human_decision||"").trim(),
+    human_notes: r.human_notes||"",
+    _ai_gpt: r._ai_gpt||"", _ai_claude: r._ai_claude||""
+  }));
+
+  let idx = 0;
+
+  const el = id => document.getElementById(id);
+  const toastEl = el('toast');
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>toastEl.classList.remove('show'), 1600);
+  }
+
+  function firstUnreviewedFrom(start){
+    for (let i=start; i<records.length; i++) if(!records[i].human_decision) return i;
+    for (let i=0; i<start; i++) if(!records[i].human_decision) return i;
+    return -1;
+  }
+
+  function candidateModels(r){
+    const models = [];
+    if ((r._ai_gpt||'').trim().toLowerCase() === 'include') models.push('GPT');
+    if ((r._ai_claude||'').trim().toLowerCase() === 'include') models.push('Claude');
+    return models;
+  }
+
+  function sentenceSpans(text){
+    const spans = [];
+    const re = /[^.!?]+(?:[.!?]+|$)/g;
+    let match;
+    while ((match = re.exec(text)) !== null){
+      const leading = (match[0].match(/^\s*/) || [''])[0].length;
+      const value = match[0].trim();
+      if (value) spans.push({start:match.index + leading, end:match.index + leading + value.length, value});
+    }
+    return spans;
+  }
+
+  function cueScore(text){
+    return CANDIDATE_CUES.reduce((score, cue) => score + (cue.pattern.test(text) ? cue.weight : 0), 0);
+  }
+
+  function bestCueSpan(text, isTitle){
+    if (!text) return null;
+    const spans = isTitle ? [{start:0, end:text.length, value:text}] : sentenceSpans(text);
+    return spans.map(span => ({...span, score:cueScore(span.value)}))
+      .sort((a,b) => b.score - a.score || a.start - b.start)[0] || null;
+  }
+
+  function renderMarkedText(node, text, span){
+    node.replaceChildren();
+    if (!span){
+      node.textContent = text;
+      return;
+    }
+    node.append(document.createTextNode(text.slice(0, span.start)));
+    const mark = document.createElement('mark');
+    mark.className = 'candidate-cue';
+    mark.textContent = text.slice(span.start, span.end);
+    node.append(mark, document.createTextNode(text.slice(span.end)));
+  }
+
+  function render(){
+    const r = records[idx];
+    el('chipPmid').textContent = 'PMID ' + r.pmid;
+    el('chipYear').textContent = r.year;
+    el('chipJournal').textContent = r.journal;
+    const settingChip = el('chipSetting');
+    settingChip.textContent = r.source_setting;
+    settingChip.className = 'chip ' + (/emergency/i.test(r.source_setting) ? 'setting-ed' : 'setting-pc');
+
+    const decChip = el('chipDecided');
+    if (r.human_decision){
+      decChip.style.display = 'inline-block';
+      decChip.textContent = r.human_decision === 'include' ? '✓ included' : '✕ excluded';
+      decChip.className = 'chip ' + (r.human_decision === 'include' ? 'decided-include' : 'decided-exclude');
+    } else {
+      decChip.style.display = 'none';
+    }
+
+    const models = candidateModels(r);
+    const titleCue = models.length ? bestCueSpan(r.title, true) : null;
+    const abstractCue = models.length ? bestCueSpan(r.abstract, false) : null;
+    const hasSpecificCue = (titleCue && titleCue.score > 0) || (abstractCue && abstractCue.score > 0);
+    const useTitleCue = models.length && (!hasSpecificCue ||
+      (titleCue && titleCue.score >= (abstractCue ? abstractCue.score : 0) && titleCue.score > 0));
+    renderMarkedText(el('fieldTitle'), r.title, useTitleCue ? titleCue : null);
+
+    const evidence = el('candidateEvidence');
+    if (models.length){
+      evidence.hidden = false;
+      el('candidateEvidenceText').replaceChildren(
+        document.createTextNode('Flagged by '),
+        (() => { const span = document.createElement('span'); span.className = 'models'; span.textContent = models.join(' + '); return span; })(),
+        document.createTextNode(hasSpecificCue
+          ? '. The highlight is the strongest match to the screening criteria; the original run did not retain an exact evidence span.'
+          : '. No specific cue could be recovered, so the title is marked for manual review; the original run did not retain an exact evidence span.')
+      );
+    } else {
+      evidence.hidden = true;
+    }
+    const abs = el('fieldAbstract');
+    if (r.abstract && r.abstract.trim()){
+      renderMarkedText(abs, r.abstract, !useTitleCue && abstractCue && abstractCue.score > 0 ? abstractCue : null);
+      abs.classList.remove('empty');
+    } else {
+      abs.textContent = 'No abstract available for this record — title only.';
+      abs.classList.add('empty');
+    }
+    el('notesInput').value = r.human_notes || '';
+    el('jumpInput').value = idx+1;
+
+    el('prevBtn').disabled = idx === 0;
+    updateProgress();
+  }
+
+  function updateProgress(){
+    const reviewed = records.filter(r=>r.human_decision).length;
+    const inc = records.filter(r=>r.human_decision==='include').length;
+    const exc = records.filter(r=>r.human_decision==='exclude').length;
+    el('progressFill').style.width = (100*reviewed/records.length)+'%';
+    el('progressLabel').textContent = reviewed + ' / ' + records.length + ' reviewed';
+    el('statInclude').textContent = inc;
+    el('statExclude').textContent = exc;
+    el('statRemaining').textContent = records.length - reviewed;
+    el('doneBanner').style.display = reviewed === records.length ? 'block' : 'none';
+  }
+
+  function decide(decision){
+    records[idx].human_decision = decision;
+    records[idx].human_notes = el('notesInput').value;
+    const next = firstUnreviewedFrom(idx+1);
+    if (next === -1){
+      updateProgress();
+      toast(decision === 'include' ? 'Marked include — that was the last one' : 'Marked exclude — that was the last one');
+      render();
+    } else {
+      idx = next;
+      toast(decision === 'include' ? 'Marked include' : 'Marked exclude');
+      render();
+    }
+  }
+
+  function skip(){
+    records[idx].human_notes = el('notesInput').value;
+    const next = firstUnreviewedFrom(idx+1);
+    idx = (next === -1) ? Math.min(idx+1, records.length-1) : next;
+    render();
+  }
+
+  el('includeBtn').onclick = ()=>decide('include');
+  el('excludeBtn').onclick = ()=>decide('exclude');
+  el('skipBtn').onclick = skip;
+  el('prevBtn').onclick = ()=>{ records[idx].human_notes = el('notesInput').value; idx = Math.max(0, idx-1); render(); };
+  el('nextBtn').onclick = ()=>{
+    records[idx].human_notes = el('notesInput').value;
+    const next = firstUnreviewedFrom(idx+1);
+    idx = next === -1 ? Math.min(idx+1, records.length-1) : next;
+    render();
+  };
+  el('jumpInput').addEventListener('change', e=>{
+    let v = parseInt(e.target.value, 10);
+    if (isNaN(v)) return;
+    v = Math.max(1, Math.min(records.length, v));
+    records[idx].human_notes = el('notesInput').value;
+    idx = v-1;
+    render();
+  });
+
+  document.addEventListener('keydown', e=>{
+    if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') {
+      if (e.key === 'Escape') document.activeElement.blur();
+      return;
+    }
+    if (e.key === 'i' || e.key === 'I') decide('include');
+    else if (e.key === 'e' || e.key === 'E') decide('exclude');
+    else if (e.key === 's' || e.key === 'S') skip();
+    else if (e.key === 'ArrowRight') el('nextBtn').click();
+    else if (e.key === 'ArrowLeft') el('prevBtn').click();
+  });
+
+  // ---- CSV export / import --------------------------------------------
+  function csvEscape(v){
+    v = (v===undefined || v===null) ? '' : String(v);
+    if (/[",\n\r]/.test(v)) return '"' + v.replace(/"/g,'""') + '"';
+    return v;
+  }
+  function toCSV(rows){
+    const lines = [COLUMNS.join(',')];
+    for (const r of rows) lines.push(COLUMNS.map(c=>csvEscape(r[c])).join(','));
+    return lines.join('\r\n');
+  }
+  function download(filename, text){
+    const blob = new Blob(['﻿'+text], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  el('exportBtn').onclick = ()=>{
+    records[idx].human_notes = el('notesInput').value;
+    const stamp = new Date().toISOString().slice(0,10);
+    download('11_validation_sample_reviewed.csv', toCSV(records));
+    toast('Exported — safe to close this tab');
+  };
+
+  // Minimal CSV parser: handles quoted fields, escaped quotes, commas and
+  // newlines inside quotes. Good enough for a file this shape produced.
+  function parseCSV(text){
+    const rows = [];
+    let row = [], field = '', inQuotes = false;
+    for (let i=0; i<text.length; i++){
+      const c = text[i];
+      if (inQuotes){
+        if (c === '"'){
+          if (text[i+1] === '"'){ field += '"'; i++; }
+          else inQuotes = false;
+        } else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === ','){ row.push(field); field=''; }
+        else if (c === '\r'){ /* skip */ }
+        else if (c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+        else field += c;
+      }
+    }
+    if (field.length || row.length){ row.push(field); rows.push(row); }
+    if (!rows.length) return [];
+    let header = rows[0].map(h=>h.replace(/^﻿/,'').trim());
+    return rows.slice(1).filter(r=>r.length>1 || r[0]!=='').map(r=>{
+      const obj = {};
+      header.forEach((h,i)=>obj[h]=r[i]!==undefined?r[i]:'');
+      return obj;
+    });
+  }
+
+  el('resumeInput').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      let parsed;
+      try { parsed = parseCSV(ev.target.result); }
+      catch(err){ toast('Could not read that file as CSV'); return; }
+      const byPmid = {};
+      parsed.forEach(p=>{ if(p.pmid) byPmid[String(p.pmid).trim()] = p; });
+      let merged = 0;
+      records.forEach(r=>{
+        const p = byPmid[String(r.pmid).trim()];
+        if (p){
+          if ((p.human_decision||'').trim()){ r.human_decision = p.human_decision.trim(); merged++; }
+          if ((p.human_notes||'').trim()) r.human_notes = p.human_notes;
+        }
+      });
+      idx = firstUnreviewedFrom(0);
+      if (idx === -1) idx = 0;
+      render();
+      toast('Resumed: ' + merged + ' prior decisions loaded');
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+[
+  {
+    "id": 1,
+    "task": "Rapid acuity appraisal",
+    "question": "How sick is this person, judged at a glance?",
+    "definition": "A fast, holistic judgement of how unwell someone is, or how likely they are to deteriorate, formed at a glance rather than reasoned out. This first impression sets the pace of everything that follows."
+  },
+  {
+    "id": 2,
+    "task": "Prioritisation & resource management",
+    "question": "What or whom next, and what do I spend on it?",
+    "definition": "Deciding what or whom to deal with next, and how to spend limited resources: attention, time, beds, staff, equipment, when several things compete."
+  },
+  {
+    "id": 3,
+    "task": "Directed information gathering & sufficiency",
+    "question": "What do I look for, and when have I got enough?",
+    "definition": "Steering their own search for information: what to look for or ask about, how to get it, and when there is enough to move on."
+  },
+  {
+    "id": 4,
+    "task": "Diagnostic reasoning",
+    "question": "What explains these findings, and which is most likely?",
+    "definition": "Building a set of possible explanations for the presentation and moving them up or down as evidence arrives, including noticing when the case does not fit the expected pattern."
+  },
+  {
+    "id": 5,
+    "task": "Managing uncertainty",
+    "question": "What cannot be known, and what do I do anyway?",
+    "definition": "Explicitly acknowledging what is unknown and choosing a next step that either tolerates it or resolves it, instead of forcing an answer too early. Includes safety-netting: naming in advance what would prompt a change of course."
+  },
+  {
+    "id": 6,
+    "task": "Risk stratification & risk tolerance",
+    "question": "How bad is it to be wrong here?",
+    "definition": "Weighing how dangerous it would be to be wrong: keeping cannot-miss diagnoses in play, matching how aggressive to be to the worst case, and locating their own threshold for acting."
+  },
+  {
+    "id": 7,
+    "task": "Judging credibility & completeness",
+    "question": "Can I trust this source, and what is missing?",
+    "definition": "Judging whether incoming information can be trusted and whether anything is missing: checking the source, deciding whether to verify it first-hand, and flagging the gap."
+  },
+  {
+    "id": 8,
+    "task": "Weighing & integrating information",
+    "question": "What do these findings mean when taken together?",
+    "definition": "Relating several findings, all accepted as accurate, to one another, to this patient's own baseline, and to how they were previously, in order to arrive at a single interpretation."
+  },
+  {
+    "id": 9,
+    "task": "Knowledge & protocol retrieval",
+    "question": "What do I know, or need to look up?",
+    "definition": "Retrieving stored medical knowledge, rules or standards from memory, or looking them up, and applying them to the case — including recognising the limits of one’s own knowledge."
+  },
+  {
+    "id": 10,
+    "task": "Anticipatory planning & forward projection",
+    "question": "Where is this heading, and what does that change now?",
+    "definition": "Looking ahead to the likely trajectory, endpoint and next moves, and letting that forecast change what is done now, before a decision is reached."
+  },
+  {
+    "id": 11,
+    "task": "Committing to an endpoint & disposition",
+    "question": "Where does this patient end up, and what settles it?",
+    "definition": "Bringing everything together into a final disposition and plan, and judging whether a pending test or action is worth pursuing based on whether its result would actually change that plan."
+  },
+  {
+    "id": 12,
+    "task": "Patient-centred reasoning & communication",
+    "question": "What does this patient need, and how do I say it?",
+    "definition": "Folding the patient's situation, goals, understanding, preferences and feelings into the reasoning and the plan, and deliberately shaping how things are communicated to fit them."
+  },
+  {
+    "id": 13,
+    "task": "Team & distributed cognition",
+    "question": "What is someone else thinking, doing, or responsible for?",
+    "definition": "Reasoning about and through other people: how far to trust a colleague, what to do themselves versus hand over, checking someone else's plan, passing on responsibility, and coordinating with other services."
+  },
+  {
+    "id": 14,
+    "task": "Metacognitive self-regulation",
+    "question": "What is my own mind doing, and how do I manage it?",
+    "definition": "Watching their own reasoning, confidence and biases, and deliberately managing their own attention, effort and memory."
+  },
+  {
+    "id": 15,
+    "task": "Multi-patient monitoring",
+    "question": "Across all my patients, is everything moving and is anything missed?",
+    "definition": "Going back over the whole set of patients mid-shift: re-triaging across patients by acuity, tracking that orders and results are moving, and confirming nothing has been missed."
+  },
+  {
+    "id": 16,
+    "task": "Feasibility & system navigation",
+    "question": "Can this even happen here, and if not, how?",
+    "definition": "Judging whether a plan can actually be carried out, given coverage, cost, appointment supply, service hours and who controls access, and working out a route around the block when there is one."
+  },
+  {
+    "id": 17,
+    "task": "Encounter scoping",
+    "question": "What is this visit about, and what else goes in it?",
+    "definition": "Fixing what this contact is meant to be for and which of the patient's problems it will carry, including deciding to open something the patient did not come in about, or deliberately to leave something out."
+  }
+]

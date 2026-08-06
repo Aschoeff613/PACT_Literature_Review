@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Split the 300-record PACT reviewer HTML into two blinded 150-record files."""
+"""Build two blinded 150-record browser reviewers from the validation CSV."""
 
+import argparse
 import csv
 import json
 import re
 from pathlib import Path
 
 
-SOURCE = Path("/Users/aschoeff/Downloads/pact_reviewer_2.html")
-OUTPUT_DIR = Path("/Users/aschoeff/Downloads/pact-lit-review")
-SCREENING = OUTPUT_DIR / "data/11_neutral_screening.csv"
+ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_SOURCE = ROOT / "templates/pact_reviewer_template.html"
+DEFAULT_VALIDATION = ROOT / "data/11_neutral_validation_sample.csv"
+DEFAULT_SCREENING = ROOT / "data/11_neutral_screening.csv"
 SEED_PATTERN = re.compile(
     r'(<script id="seed-data" type="application/json">)(.*?)(</script>)', re.S
 )
@@ -149,6 +151,14 @@ def replace_once(text: str, old: str, new: str) -> str:
     if count != 1:
         raise ValueError(f"Expected exactly one match, found {count}: {old[:80]!r}")
     return text.replace(old, new, 1)
+
+
+def embedded_records(path: Path) -> list[dict]:
+    text = path.read_text(encoding="utf-8")
+    match = SEED_PATTERN.search(text)
+    if not match:
+        raise ValueError(f"Could not find embedded reviewer data in {path}")
+    return json.loads(match.group(2))
 
 
 def build_version(source: str, records: list[dict], start: int, end: int) -> str:
@@ -505,21 +515,50 @@ def build_version(source: str, records: list[dict], start: int, end: int) -> str
 
 
 def main() -> None:
-    source = SOURCE.read_text(encoding="utf-8")
-    match = SEED_PATTERN.search(source)
-    if not match:
-        raise ValueError("Could not find embedded reviewer data")
-    records = json.loads(match.group(2))
+    parser = argparse.ArgumentParser(
+        description="Build records 1-150 and 151-300 as self-contained browser reviewers."
+    )
+    parser.add_argument("--template", type=Path, default=DEFAULT_SOURCE,
+                        help="reviewer HTML template")
+    parser.add_argument("--validation", type=Path, default=DEFAULT_VALIDATION,
+                        help="300-record validation CSV")
+    parser.add_argument("--screening", type=Path, default=DEFAULT_SCREENING,
+                        help="AI screening CSV used only to locate optional evidence cues")
+    parser.add_argument("--output-dir", type=Path, default=ROOT,
+                        help="directory for the two generated HTML files")
+    args = parser.parse_args()
+
+    source = args.template.read_text(encoding="utf-8")
+    if not SEED_PATTERN.search(source):
+        raise ValueError("Could not find the seed-data element in the HTML template")
+    if args.validation.exists():
+        with args.validation.open(newline="", encoding="utf-8-sig") as handle:
+            records = list(csv.DictReader(handle))
+    else:
+        existing = [
+            args.output_dir / "pact_validation_review_001-150.html",
+            args.output_dir / "pact_validation_review_151-300.html",
+        ]
+        if not all(path.exists() for path in existing):
+            raise FileNotFoundError(
+                f"Validation CSV not found at {args.validation}, and existing reviewer HTML files "
+                "were not available as a fallback."
+            )
+        records = embedded_records(existing[0]) + embedded_records(existing[1])
     if len(records) != 300:
         raise ValueError(f"Expected 300 records, found {len(records)}")
-    with SCREENING.open(newline="", encoding="utf-8-sig") as handle:
-        screening_by_pmid = {row["pmid"]: row for row in csv.DictReader(handle)}
-    records = annotate_records(records, screening_by_pmid)
+    if args.screening.exists():
+        with args.screening.open(newline="", encoding="utf-8-sig") as handle:
+            screening_by_pmid = {row["pmid"]: row for row in csv.DictReader(handle)}
+        records = annotate_records(records, screening_by_pmid)
+    else:
+        records = [{**record, "_ai_gpt": "", "_ai_claude": ""} for record in records]
 
     outputs = [
-        (1, 150, OUTPUT_DIR / "pact_validation_review_001-150.html"),
-        (151, 300, OUTPUT_DIR / "pact_validation_review_151-300.html"),
+        (1, 150, args.output_dir / "pact_validation_review_001-150.html"),
+        (151, 300, args.output_dir / "pact_validation_review_151-300.html"),
     ]
+    args.output_dir.mkdir(parents=True, exist_ok=True)
     for start, end, path in outputs:
         path.write_text(build_version(source, records, start, end), encoding="utf-8")
         print(path)

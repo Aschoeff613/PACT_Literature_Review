@@ -8,14 +8,14 @@ a terminal, you can run all of this.
 
 ## What this actually does
 
-Nine small programs, run in order. Each one reads a spreadsheet, does one job, and
-writes a new spreadsheet you can open in Excel. Nothing is hidden and nothing happens
-in one giant step, so if something looks wrong you can see exactly where.
+Small numbered programs, each doing one auditable job. The current rapid pathway ends
+with abstract mapping and a short optional PDF list; the older full-text extraction and
+inductive-clustering scripts remain available but are not required.
 
 | Step | What it does | You get |
 |---|---|---|
 | 0 | check your API keys and model names work | a working config |
-| 1 | one broad PubMed search, no task categories assumed | ~5,700 records |
+| 1 | separate ED and primary-care PubMed searches, no task categories assumed | bounded source pool |
 | 2 | remove duplicates, set screening batches | unique papers, relevance order |
 | 3 | two AI models screen each title and abstract | track A/B/C plus demands, situations, risk evidence |
 | 4 | human validation sample, and the includes list | validation sheet + includes |
@@ -23,10 +23,12 @@ in one giant step, so if something looks wrong you can see exactly where.
 | 6 | two models extract demands and situations, quotes auto-checked | extraction table |
 | 7 | compare the human sample against the AI | sensitivity, the number that matters |
 | 8 | inductively cluster the whole corpus (open coding, then merge) | ~30-50 emergent candidate tasks with citations |
+| 12 | merge four reviewer exports | agreement summary + adjudication list |
+| 13 | map retained abstracts to the final 17 tasks | evidence table + selective PDF shortlist |
 
-The human work is: screening 300 abstracts (step 4), fetching perhaps 40 PDFs (step 5),
-and deciding which construct names mean the same thing (after step 6). That is the job.
-Everything else is the computer's.
+The human work is: four people screening 150 abstracts each, adjudicating only their
+disagreements, scanning one AI-produced mapping table, and retrieving the small number
+of PDFs that the abstracts cannot settle. Everything else is the computer's.
 
 ---
 
@@ -142,10 +144,10 @@ column. **Hide the two columns starting with `_ai_` first** so you are not influ
 by what the models said. Then read each abstract and type `include` or `exclude`.
 Save the file as CSV when done.
 
-This is about 4 to 6 hours of reading. No PDFs, no library access, just abstracts.
-For two independent ratings per paper, one reviewer can complete all 300 while
-additional reviewers divide the same records among themselves. Resolve disagreements
-by discussion or a designated adjudicator.
+No PDFs or library access are needed for this step. Four people each review 150
+abstracts: reviewers 1 and 2 independently review records 1–150, while reviewers 3
+and 4 independently review records 151–300. Every paper therefore receives exactly
+two human decisions.
 
 #### Browser-based validation reviewers
 
@@ -171,13 +173,53 @@ To rebuild both browser files from the current validation sample, run:
 python3 scripts/split_reviewer_html.py
 ```
 
-### Step 5 — get the full text
+When all four reviewers have exported their CSV files, merge them with:
+
+```
+python3 scripts/12_merge_human_reviews.py reviewer_1.csv reviewer_2.csv reviewer_3.csv reviewer_4.csv
+```
+
+Agreements become the consensus decision. Open `data/12_disagreements.csv`, fill in
+`adjudicated_decision` only for the disagreements, and rerun the same command with
+`--adjudications data/12_disagreements.csv`. This updates the consolidated file without
+copying rows by hand. Then inspect the original AI screen:
+
+```
+python3 scripts/07_metrics.py --input data/12_human_consensus.csv
+```
+
+### Rapid pathway — map abstracts and retrieve only selected PDFs
+
+First confirm the number of abstracts that will be mapped without making an API call:
+
+```
+python3 scripts/13_rapid_abstract_map.py --dry-run
+```
+
+Then run the one-model abstract mapping:
+
+```
+python3 scripts/13_rapid_abstract_map.py
+```
+
+The main output is `data/13_rapid_abstract_map.csv`. It contains the clinical task,
+one to three of the final 17 cognitive tasks, an exact supporting abstract sentence,
+confidence, a possible-new-task flag, and blank human-check columns. Quickly scan this
+table and correct obvious errors.
+
+Only the papers in `data/13_pdf_shortlist.csv` need possible full-text retrieval. A
+paper is placed there when its abstract is insufficient, it may represent a new task,
+or the supporting quote cannot be verified. **For the current rapid targeted review,
+this is the end of the standard workflow.**
+
+### Optional legacy Step 5 — get all available full texts
 
 ```
 python3 scripts/05_fulltext.py
 ```
 
-Downloads everything that is free and legal, from PubMed Central and from Unpaywall.
+Skip this step for the rapid pathway. It downloads everything that is free and legal,
+from PubMed Central and from Unpaywall, and is retained for the original fuller workflow.
 On this corpus, 34% of records have PMC full text and another 38% of the rest are
 open access elsewhere, so expect roughly 57% to arrive on its own.
 
@@ -268,8 +310,10 @@ Commit these:
 
 - `README.md`, `protocol.md`, `requirements.txt`
 - everything in `scripts/` and `prompts/`
+- the final taxonomy in `taxonomy/` and portable reviewer source in `templates/`
 - both `pact_validation_review_*.html` browser reviewers
 - `data/01_search_log.csv` (the exact search and date)
+- `data/11_neutral_sample_log.csv` (exact category-neutral validation searches and counts)
 - `data/08_candidate_tasks.csv` and `data/08a_open_coding.csv` (the emergent task list and its audit trail)
 - your metrics output from step 7, including the sensitivity figure even if it is low
 

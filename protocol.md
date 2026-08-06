@@ -1,144 +1,152 @@
-# Targeted literature review protocol
+# PACT rapid targeted literature review protocol
 
-PACT Task 1.1.1, literature stream · Version 1.0, [DATE]
+PACT Task 1.1.1, literature stream · Version 1.1, 6 August 2026
 
-A targeted review, not systematic and not a scoping review. Purpose is to identify named cognitive constructs for a candidate codebook, so the search is defined and documented but not exhaustive, and screening stops at construct saturation rather than at the end of the record set.
+This is a rapid targeted taxonomy-validation review. It is not a systematic review
+or scoping review, does not claim exhaustive coverage, and does not require duplicate
+full-text screening or duplicate extraction.
 
----
+## 1. Purpose
 
-## 1. Question
+Identify published adult emergency-medicine and primary-care studies that directly
+examine clinician reasoning, decision-making, communication, or judgment-dependent
+work. Use this evidence to check the final 17-task PACT taxonomy and identify possible
+gaps.
 
-Which cognitive processes and cognitively demanding clinical tasks have been named and defined in the literature on physician reasoning in adult emergency medicine and adult primary care, and what failure modes are described for each?
+## 2. Operational inclusion rule
 
-## 2. Construct retention rule
+Ask what the paper is actually studying.
 
-A construct is retained if a source **names it and either defines it or operationalizes it as a measured or coded variable.**
+Include when clinician reasoning, choices, behavior, communication, or another
+judgment-dependent clinical process is an object of study. The paper should contain
+both:
 
-Decided in advance:
+1. a cognitive task—the thinking or communication itself; and
+2. a clinical task—the care activity where that thinking occurs.
 
-- A named bias (anchoring, premature closure) is recorded as a **failure mode**, attached to the construct it degrades, not as a construct itself.
-- A clinical activity with no stated cognitive demand (for example "order a CT") is not a construct.
-- Umbrella terms with no definition in the source ("clinical intuition", "gestalt") are recorded but flagged `undefined` and are not eligible for the codebook without a second source that defines them.
+Exclude when the paper only evaluates a disease, treatment, test, risk score,
+prevalence, safety outcome, or patient outcome while clinician work is incidental.
+
+Examples:
+
+- “Is antibiotic A more effective than antibiotic B?” — exclude.
+- “Why do clinicians select antibiotic A rather than antibiotic B?” — include.
+- “How often does antibiotic A cause adverse effects?” — exclude.
+- “Does a decision-support alert change antibiotic selection?” — include.
+
+When genuinely uncertain at abstract screening, include for later review.
 
 ## 3. Eligibility
 
 | | Include | Exclude |
 |---|---|---|
-| Type | Empirical studies, reviews, framework and theory papers | Editorials without a framework, conference abstracts, letters |
-| Population | Practising physicians, attending or resident | Students only; non-physician clinicians only |
-| Setting | Adult ED, adult primary care, general practice; generic physician reasoning where transferable | Paediatric only, ICU only, single inpatient specialty only |
-| Content | Meets the retention rule in Section 2 | Clinical outcome studies with no cognitive construct |
-| Language | English, Dutch | Other |
-| Dates | 1990 to present | Pre-1990 unless a seed or cited by one |
+| Setting | Adult emergency medicine or adult primary care; admission, discharge, or transition work linking them | Pediatric, ICU or established inpatient care, prehospital, nursing-only, or specialty-only work |
+| Content | Empirical examination of clinician cognition, decisions, communication, or judgment-dependent workflow | Treatment/test efficacy or safety only; prevalence or outcomes only; no clinician cognitive work studied |
+| Publication | Empirical studies and reviews with an applicable clinical process | Case reports, editorials, comments, letters, education-only studies |
+| Language | English | Other languages |
+| Dates | 2005–2026 | Outside this range |
 
-Date rationale: the naturalistic decision making and dual-process literature these constructs descend from postdates the late 1980s. Pre-1990 landmarks enter through citation chasing rather than through the database search.
+## 4. Source and search
 
-## 4. Sources
+PubMed is the sole database for this bounded targeted scan. Emergency medicine and
+primary care were searched separately. Each setting block was crossed with broad
+clinician-cognition terms or diagnostic-error and patient-safety signals.
 
-**PubMed/MEDLINE** and **Embase** for the clinical literature. **PsycINFO** for cognitive psychology, macrocognition, and naturalistic decision making, which MEDLINE indexes poorly and which is where a large share of these constructs originate. **ACM Digital Library** and **IEEE Xplore** for automation bias and human-AI interaction constructs, which mostly appear in CS venues. Hand search of human factors book chapters, recorded as a separate grey stratum.
+The search did not contain the names of the 17 PACT tasks. It was therefore
+category-neutral relative to the final taxonomy, although it was intentionally seeded
+with broad cognition and safety terminology.
 
-## 5. Search strings
+The exact queries and counts are preserved in `data/11_neutral_sample_log.csv`.
 
-Run verbatim in PubMed. Counts are as of 3 August 2026; record your own on the day you run them.
+| Setting | PubMed results | Random sample target | Usable records |
+|---|---:|---:|---:|
+| Emergency medicine | 2,878 | 250 | 250 |
+| Primary care | 3,026 | 250 | 249 |
+| **Total** | — | **500** | **499** |
 
-**Strand 1, cognition in setting.** 2,555 records.
+Sampling used the fixed seed `20260803`. One sampled PubMed identifier did not return
+usable record details, leaving the 499-record bounded corpus.
 
-```
-("Clinical Reasoning"[MeSH] OR "Clinical Decision-Making"[MeSH] OR "clinical reasoning"[tiab]
-OR "diagnostic reasoning"[tiab] OR "cognitive task analysis"[tiab] OR macrocognition[tiab]
-OR "naturalistic decision making"[tiab] OR sensemaking[tiab] OR "situation awareness"[tiab]
-OR metacognition[tiab] OR "cognitive load"[tiab])
-AND
-("Emergency Medicine"[MeSH] OR "Emergency Service, Hospital"[MeSH] OR "Primary Health Care"[MeSH]
-OR "General Practice"[MeSH] OR "emergency department"[tiab] OR "primary care"[tiab]
-OR "general practice"[tiab])
-```
+## 5. AI abstract screening
 
-**Strand 2, failure modes in setting.** 5,158 records.
+GPT and Claude independently screened all 499 titles and abstracts using the same
+operational boundary. A record was provisionally retained when either model said
+include.
 
-```
-("Diagnostic Errors"[MeSH] OR "diagnostic error"[tiab] OR "diagnostic errors"[tiab]
-OR "cognitive bias"[tiab] OR "cognitive biases"[tiab] OR "premature closure"[tiab]
-OR "anchoring bias"[tiab] OR "therapeutic inertia"[tiab] OR "clinical inertia"[tiab]
-OR "missed diagnosis"[tiab])
-AND
-("Emergency Medicine"[MeSH] OR "Emergency Service, Hospital"[MeSH] OR "Primary Health Care"[MeSH]
-OR "General Practice"[MeSH] OR "emergency department"[tiab] OR "primary care"[tiab]
-OR "general practice"[tiab])
-```
+- At least one model included: 214
+- Both models excluded: 285
 
-**Strand 3, cognition crossed with failure.** 893 records. Highest construct density per record; screen this strand first.
+These AI results were used to build the human-validation strata. They were not shown
+as decisions in the reviewer interface.
 
-```
-("Clinical Reasoning"[MeSH] OR "Clinical Decision-Making"[MeSH] OR "clinical reasoning"[tiab]
-OR "diagnostic reasoning"[tiab] OR "cognitive task analysis"[tiab] OR macrocognition[tiab]
-OR metacognition[tiab])
-AND
-("Diagnostic Errors"[MeSH] OR "diagnostic error"[tiab] OR "cognitive bias"[tiab]
-OR "premature closure"[tiab] OR "dual process"[tiab])
-```
+## 6. Human-validation sample
 
-**Strand 4, human-AI interaction.** 2,885 records.
+The 300-paper sample was drawn in four equal cells:
 
-```
-("automation bias"[tiab] OR "trust calibration"[tiab] OR "appropriate reliance"[tiab]
-OR "Decision Support Systems, Clinical"[MeSH] OR "large language model"[tiab]
-OR "large language models"[tiab])
-AND
-("clinical reasoning"[tiab] OR "diagnostic reasoning"[tiab] OR "Clinical Decision-Making"[MeSH]
-OR "Diagnostic Errors"[MeSH] OR "emergency department"[tiab] OR "primary care"[tiab])
-```
+| AI stratum | Emergency medicine | Primary care | Total |
+|---|---:|---:|---:|
+| At least one AI included | 75 | 75 | 150 |
+| Both AIs excluded | 75 | 75 | 150 |
+| **Total** | **150** | **150** | **300** |
 
-**Adaptations.** In Embase, swap MeSH for the Emtree equivalents and `[tiab]` for `:ti,ab`. In PsycINFO, run Strand 1 term block alone without the setting block, which otherwise strangles the yield, and add `"clinical judgment"` and `"expert systems"`. In ACM and IEEE, run the Strand 4 term block alone.
+The 300 records were shuffled after sampling. This enrichment provides a practical
+check for missed papers. It must not be used to estimate the prevalence of relevant
+studies in the original PubMed results.
 
-**Citation chasing.** Backward and forward from the seed set and from every included review or framework paper. One generation. Stop earlier if a generation yields no new construct.
+## 7. Four-reviewer assignment and agreement
 
-## 6. Seed set
+Four people each review 150 abstracts, producing two independent decisions per paper:
 
-Fixed before searching. All verified against PubMed.
+- Reviewers 1 and 2: records 1–150
+- Reviewers 3 and 4: records 151–300
 
-| Source | Construct territory |
-|---|---|
-| Graber, Franklin, Gordon. *Arch Intern Med.* 2005;165(13):1493-1499. doi:10.1001/archinte.165.13.1493 | Cognitive taxonomy of diagnostic error; premature closure, faulty synthesis |
-| Croskerry, Singhal, Mamede. *BMJ Qual Saf.* 2013;22(Suppl 2):ii58-ii64. doi:10.1136/bmjqs-2012-001712 | Dual-process theory; bias origins and debiasing |
-| Croskerry. *Diagnosis (Berl).* 2014;1(1):23-27. doi:10.1515/dx-2013-0028 | Metacognition; bias as normal operating characteristic |
-| Schubert, Denmark, Crandall, Grome, Pappas. *Ann Emerg Med.* 2013;61(1):96-109. doi:10.1016/j.annemergmed.2012.08.034 | Macrocognition; novice-expert sensemaking in the ED |
-| Graham, Gray, Wagner, et al. *Health Serv Res.* 2023;58(2):415-422. doi:10.1111/1475-6773.14106 | Cognitive task analysis method |
-| Walter, Raban, Dunsmuir, Douglas, Westbrook. *Appl Ergon.* 2016;58:454-460. doi:10.1016/j.apergo.2016.07.020 | Interruption, task-switching, multitasking, workload strategy |
-| Zwaan, Rodman, Shimizu. *NEJM AI.* 2026;3(5). doi:10.1056/AIe2600354 | Human-AI interaction strategy; trust calibration |
-| Bedi, Liu, Orr-Ewing, et al. *JAMA.* 2025;333(4):319-328. doi:10.1001/jama.2024.21700 | What current benchmarks measure and omit |
+Before independent review, all four discuss 5–10 practice abstracts. Formal decisions
+are then made independently. `scripts/12_merge_human_reviews.py` merges the four
+exports, calculates percent agreement and Cohen’s kappa for each reviewer pair, and
+creates a disagreement file. Agreements become the consensus decision; only
+disagreements are adjudicated.
 
-## 7. Screening
+The browser hides model decisions but displays optional AI-assisted amber evidence
+cues. The method is therefore described as AI-assisted human validation, not fully
+AI-blinded validation.
 
-Deduplicate across databases, then screen by strand in relevance-sorted batches of 100, Strand 3 first, then 1, 4, 2.
+## 8. Rapid abstract mapping
 
-**Stopping rule: stop a strand after two consecutive batches yield no new canonical construct.** Record the batch number where each strand stopped and the number of records left unscreened. This is what makes the review targeted rather than incomplete, so report both numbers rather than implying full coverage.
+After adjudication:
 
-Two reviewers independently screen the first batch of Strand 3, compute Cohen's kappa, and reconcile. If kappa is below 0.6, revise Section 2 or 3 and recalibrate. After that, one reviewer screens and the second reviews all inclusions plus any exclusion marked uncertain.
+1. Use the final human decision for the 300 reviewed papers.
+2. For the remaining 199 papers, retain those included by either AI model, provided
+   the validation result is adequate for this targeted purpose.
+3. Run `scripts/13_rapid_abstract_map.py` once. One model maps each retained abstract
+   to one to three of the final 17 tasks.
+4. For every mapped paper, retain the concrete clinical task, taxonomy task IDs, an
+   exact supporting abstract sentence, confidence, and a possible-new-task flag.
+5. One human scans the table and corrects obvious errors.
 
-Screening is not blind to the candidate constructs already generated in the model-elicitation phase. State this in the write-up.
+The final taxonomy names and definitions used for mapping are version-controlled in
+`taxonomy/pact_17_tasks.json`.
 
-## 8. Extraction
+## 9. Selective full-text retrieval
 
-One row per construct per source.
+There is no routine full-text review of every retained paper. Retrieve a PDF only when:
 
-`construct label as given` · `verbatim definition` · `citation` · `altitude: cognitive process or clinical task` · `setting studied` · `operationalization, if any` · `associated failure modes` · `produced in model-elicitation phase? Y/N` · `flags: undefined`
+- the abstract is too vague to map confidently;
+- the paper may describe cognitive work outside the 17-task taxonomy; or
+- an especially important paper requires stronger supporting detail.
 
-Definitions extracted verbatim, not paraphrased.
+The abstract-mapping script writes these papers to `data/13_pdf_shortlist.csv`. A human
+checks any extracted full-text evidence. There is no second large human-validation
+round and no duplicate full-text extraction.
 
-## 9. Synthesis
+## 10. Deliverable and reporting
 
-Map surface labels to canonical constructs in a synonym table, keeping original labels so merges can be checked. Classify every canonical construct by altitude.
+The deliverable is a compact evidence table grouped by the final 17 cognitive tasks.
+Each row contains the citation, setting, clinical task, mapped cognitive task, exact
+supporting sentence, and human-check fields. Possible new tasks are reviewed separately
+rather than forced into the taxonomy.
 
-Then cross-tabulate provenance:
-
-| | In literature | Not in literature |
-|---|---|---|
-| **Produced by models** | Corroborated; core of the codebook | Unsupported; report count and drop |
-| **Not produced by models** | Model coverage gaps | n/a |
-
-Also report the number of model-supplied citations that failed bibliographic verification.
-
-## 10. Reported in the manuscript
-
-Search strings with database, interface, and date run. Records screened and left unscreened per strand, with the saturation batch. Calibration kappa. Canonical construct list with definitions and sources. Synonym table. Provenance table. Discarded constructs with reasons. One Methods sentence giving the true order: model elicitation first, targeted review second, designed to verify and extend rather than to generate.
+Report this accurately as a rapid targeted taxonomy-validation review. State the
+PubMed-only source, search dates, bounded 499-record corpus, stratified 300-paper
+validation sample, four-reviewer assignment, agreement and adjudication counts,
+inclusive AI rule for remaining records, AI-assisted evidence cues and mapping, and
+number of selectively retrieved PDFs. Do not imply exhaustive coverage.

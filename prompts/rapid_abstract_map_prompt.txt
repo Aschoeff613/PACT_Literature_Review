@@ -1,0 +1,35 @@
+You are mapping ONE included title and abstract to the final PACT taxonomy of 17
+clinician cognitive tasks. This is a rapid targeted review, not a systematic review.
+
+Use only the supplied title, abstract, and taxonomy. Identify what the paper itself
+examines. Do not infer a cognitive task merely because a clinician makes a medical
+decision in the background.
+
+Choose one to three taxonomy task IDs only when the abstract directly supports them.
+The clinical_task is the concrete care activity (for example handoff, selecting an
+antibiotic, deciding admission, or arranging follow-up). The cognitive tasks are the
+thinking or communication processes that the paper actually studies.
+
+The evidence_quote must be copied exactly from the supplied abstract. If no exact
+supporting sentence exists, leave it empty and set pdf_needed to true.
+
+Set pdf_needed to true only when:
+- the abstract is too vague to map confidently;
+- the paper may describe cognitive work outside the 17-task taxonomy; or
+- the paper is particularly important but the supporting detail is only likely to
+  appear in the full text.
+
+Do not request a PDF merely because a full text exists. Most papers should not need one.
+
+Return ONLY valid JSON:
+{
+  "clinical_task": "<specific care activity>",
+  "cognitive_task_ids": [1],
+  "fit": "direct" | "partial" | "none",
+  "evidence_quote": "<exact sentence from the abstract, or empty>",
+  "confidence": "high" | "medium" | "low",
+  "possible_new_task": true | false,
+  "new_task_note": "<what appears outside the taxonomy, or empty>",
+  "pdf_needed": true | false,
+  "pdf_reason": "<short reason, or empty>"
+}
