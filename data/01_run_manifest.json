@@ -1,0 +1,37 @@
+{
+  "run_utc": "2026-08-28T18:08:26Z",
+  "git_version": "8c79337",
+  "script": "01_search.py",
+  "script_sha256_16": "d68db4bbd4835f41",
+  "common_sha256_16": "019734974960a8a0",
+  "python": "3.13.5",
+  "decision_id": "2026-08-28-method-amendment",
+  "filters": "(\"2005\"[dp] : \"2026\"[dp]) AND English[la] NOT (\"Case Reports\"[pt] OR \"Editorial\"[pt] OR \"Comment\"[pt] OR \"Letter\"[pt] OR \"News\"[pt] OR \"Published Erratum\"[pt])",
+  "approved_search_exclusions": [
+    "\"adverse event\"[tiab]",
+    "\"adverse events\"[tiab]",
+    "\"triage\"[tiab]",
+    "\"Triage\"[MeSH/majr]"
+  ],
+  "approved_search_restrictions_decision_5": [
+    "\"Continuity of Patient Care\"[MeSH] restricted to [majr]",
+    "\"Referral and Consultation\"[MeSH] restricted to [majr]",
+    "bare \"referral\"[tiab] dropped",
+    "bare \"consultation\"[tiab] dropped"
+  ],
+  "settings": {
+    "emergency_medicine": 9,
+    "primary_care": 14
+  },
+  "term_group_sizes": {
+    "thinking": 34,
+    "failure": 20,
+    "coordination": 32
+  },
+  "counts_only": false,
+  "per_term": true,
+  "union_hits": {
+    "emergency_medicine": 17290,
+    "primary_care": 54558
+  }
+}

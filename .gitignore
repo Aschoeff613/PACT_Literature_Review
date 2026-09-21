@@ -1,13 +1,27 @@
-data/fulltext/
-data/*fulltext*/
-data/*.csv
-data/*.log
-!data/01_search_log.csv
-!data/07_canonical_constructs.csv
-!data/11_neutral_sample_log.csv
+# --- secrets -------------------------------------------------------------
 .env
 .env.*
+
+# --- python --------------------------------------------------------------
 __pycache__/
 *.pyc
-*.zip
+.claude/
+
+# --- os / archives -------------------------------------------------------
 .DS_Store
+*.zip
+
+# --- generated data ------------------------------------------------------
+# Full text is bulky and licence-encumbered; never commit it.
+data/fulltext/
+data/*fulltext*/
+data/*.log
+
+# Steps 1-3 (see docs/STEPS_1_3.md): commit the provenance, log, counts and
+# manifest files so a run can be audited. Do NOT commit the PMID lists --
+# they are large and fully reproducible from the query in 01_search_log.csv.
+# 11_sample_500.csv IS committed deliberately, so collaborators get the
+# screening sample from `git pull` rather than a side channel.
+data/01_pmids_*.csv
+data/11_draw_pmids.csv
+data/03_screening.csv

@@ -1,5 +1,12 @@
 # PACT targeted literature review
 
+> **Steps 1-3 were rebuilt against protocol v7 (18 Aug 2026) on 28 Aug 2026.**
+> For those three steps this README is superseded. Read
+> [`CLAUDE.md`](CLAUDE.md), [`docs/STEPS_1_3.md`](docs/STEPS_1_3.md) and
+> [`docs/DECISIONS_2026-08-28.md`](docs/DECISIONS_2026-08-28.md) instead, and use
+> `prompts/screen_prompt_v7.txt` rather than `prompts/screen_prompt.txt`.
+> Steps 0 and 4-13 below are unchanged and still current.
+
 Code and prompts for the Task 1.1.1 literature stream: finding published cognitive
 constructs in physician reasoning, to check and extend the candidate task list.
 

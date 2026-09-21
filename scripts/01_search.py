@@ -1,96 +1,326 @@
 """
-STEP 1 - Search PubMed with ONE broad, unconditioned query.
+STEP 1 - Search PubMed.
 
-Earlier versions of this script required every record to match one of 12
-pre-specified "decision families" (disposition, triage, handoff, etc.). That was
-a mistake: it meant the search could only ever return evidence for categories we
-had already picked, so "the literature supports these 12 tasks" was true by
-construction, not by discovery. A reviewer would be right to ask how that is
-different from searching for what you already believe.
+Protocol v7, step 1. Papers must be about adult emergency medicine OR adult
+primary care, AND involve at least one of three term groups:
 
-This version drops the family filter entirely. A record is in scope if it is
-about adult ED or primary care AND it discusses EITHER a cognitive process in
-clinician reasoning OR a signal of diagnostic/workflow harm (error, delay, near
-miss, malpractice claim, etc). That is the full inductive net: nothing about
-which specific tasks matter is baked into the search. The task list is supposed
-to emerge later, from clustering what these records actually say (step 8).
+    A. how clinicians think
+    B. where things go wrong
+    C. coordination and communication
 
-Tested on the dates below:
-  SETTING AND COGNITION only:                 2,331
-  SETTING AND HARM only:                      4,161
-  SETTING AND (COGNITION OR HARM), this query: 5,730
+Structure of the search
+-----------------------
+Two queries, one per setting:
 
-Run it with:   python3 scripts/01_search.py
+    (setting terms) AND (group A OR group B OR group C) AND filters
+
+Two rather than one because step 2 draws 250 papers from emergency medicine and
+250 from primary care separately, so the two pools have to exist separately.
+This is also what satisfies the step 1 gate: "record how many papers each
+setting returns."
+
+What this script does NOT do
+---------------------------
+It does not download titles and abstracts. It downloads PMIDs only. The union
+queries return tens of thousands of records and step 2 only needs 500 of them,
+so fetching metadata here would waste hours and produce a file nobody reads.
+11_neutral_sample.py fetches metadata for the 500 papers actually drawn.
+
+This is a deliberate departure from the old 01_search.py, which downloaded
+every hit. Recorded here so it appears in the methods write-up.
+
+Usage
+-----
+    python3 scripts/01_search.py                # counts + PMID lists
+    python3 scripts/01_search.py --counts-only  # counts only, no PMID download
+    python3 scripts/01_search.py --per-term     # also count every term singly
+
+--per-term is worth running once. It tells you which individual terms are
+carrying the query and which are contributing nothing, which is the honest
+version of "confirm the coordination terms return a usable number."
 """
-import json, urllib.parse, os, sys, re, html
+import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from common import fetch, write_csv, EUTILS, EMAIL, DATA
+from common import (DATA, esearch_all_pmids, esearch_count, provenance,
+                    require_email, write_csv, write_json)
 
-DATES = "AND 2005:2026[dp] AND English[lang]"
+DECISION_ID = "2026-08-28-method-amendment"
 
-SETTING = """("Emergency Service, Hospital"[majr] OR "Emergency Medicine"[majr] OR "Primary Health Care"[majr] OR "General Practice"[majr] OR "General Practitioners"[majr] OR "Physicians, Primary Care"[majr] OR "Family Practice"[majr] OR "emergency department"[ti] OR "emergency physician"[ti] OR "emergency physicians"[ti] OR "emergency medicine"[ti] OR "primary care"[ti] OR "general practice"[ti] OR "general practitioner"[ti] OR "general practitioners"[ti] OR "family physician"[ti] OR "family physicians"[ti])"""
+# ---------------------------------------------------------------------------
+# Filters applied inside the query
+# ---------------------------------------------------------------------------
+# Protocol v7 excludes: paediatrics, ICU, other specialties, nursing-only,
+# education-only, case reports, editorials, patient-thinking papers.
+#
+# Only some of those belong in a PubMed query. Publication type, language and
+# date are indexed reliably, so they go here. Population and setting exclusions
+# do NOT go here: a NOT clause on "Child"[MeSH] or "Intensive Care Units"[MeSH]
+# silently drops papers that are squarely in scope but mention children or the
+# ICU once. Step 3 screening handles those, and its instruction is to include
+# when uncertain. Putting them in the query would be a silent, unrecoverable
+# exclusion with no reviewer able to see it.
+#
+# Consequence to accept: the corpus contains out-of-scope records and the
+# screen has to remove them. That is the right place for the error to live.
+FILTERS = (
+    '("2005"[dp] : "2026"[dp]) '
+    'AND English[la] '
+    'NOT ("Case Reports"[pt] OR "Editorial"[pt] OR "Comment"[pt] '
+    'OR "Letter"[pt] OR "News"[pt] OR "Published Erratum"[pt])'
+)
 
-# Cognitive-PROCESS signal: the paper names how clinicians reason, without
-# reference to any specific clinical situation. This is the "demand" half.
-COGNITION = """("Clinical Reasoning"[MeSH] OR "Diagnostic Errors"[majr] OR "clinical reasoning"[tiab] OR "diagnostic reasoning"[tiab] OR "clinical judgment"[tiab] OR "clinical judgement"[tiab] OR "clinical gestalt"[tiab] OR "physician judgment"[tiab] OR "physician gestalt"[tiab] OR "cognitive bias"[tiab] OR "cognitive biases"[tiab] OR "diagnostic error"[tiab] OR "diagnostic errors"[tiab] OR "diagnostic uncertainty"[tiab] OR "decision-making under uncertainty"[tiab] OR "premature closure"[tiab] OR "anchoring bias"[tiab] OR "cognitive load"[tiab] OR "situation awareness"[tiab] OR "overconfidence"[tiab] OR "missed diagnosis"[tiab] OR "missed diagnoses"[tiab] OR "delayed diagnosis"[tiab] OR "diagnostic delay"[tiab] OR "missed opportunity"[tiab] OR "missed opportunities"[tiab] OR "clinician decision"[tiab] OR "physician decision"[tiab] OR "decision fatigue"[tiab] OR "clinical intuition"[tiab])"""
+SETTINGS = {
+    "emergency_medicine": [
+        '"Emergency Medicine"[MeSH]',
+        '"Emergency Service, Hospital"[MeSH]',
+        '"emergency department"[tiab]',
+        '"emergency departments"[tiab]',
+        '"emergency physician"[tiab]',
+        '"emergency physicians"[tiab]',
+        '"emergency medicine"[tiab]',
+        '"emergency room"[tiab]',
+        '"acute medical unit"[tiab]',
+    ],
+    "primary_care": [
+        '"Primary Health Care"[MeSH]',
+        '"General Practice"[MeSH]',
+        '"General Practitioners"[MeSH]',
+        '"Physicians, Primary Care"[MeSH]',
+        '"Physicians, Family"[MeSH]',
+        '"primary care"[tiab]',
+        '"general practice"[tiab]',
+        '"general practitioner"[tiab]',
+        '"general practitioners"[tiab]',
+        '"family medicine"[tiab]',
+        '"family practice"[tiab]',
+        '"family physician"[tiab]',
+        '"family physicians"[tiab]',
+        '"outpatient clinic"[tiab]',
+    ],
+}
 
-# HARM signal: the paper documents error, delay, or failure with some evidence
-# attached, regardless of whether it names a cognitive process. This is the
-# "situation" half - it is what strands 5-7 were reaching for, generalised so it
-# is not limited to a pre-chosen list of failure types.
-HARM = """("diagnostic error"[tiab] OR "diagnostic errors"[tiab] OR "missed diagnosis"[tiab] OR "missed diagnoses"[tiab] OR "delayed diagnosis"[tiab] OR "diagnostic delay"[tiab] OR "adverse event"[tiab] OR "adverse events"[tiab] OR "medical error"[tiab] OR "medical errors"[tiab] OR "never event"[tiab] OR "sentinel event"[tiab] OR malpractice[tiab] OR "malpractice claim"[tiab] OR "malpractice claims"[tiab] OR "patient safety incident"[tiab] OR "near miss"[tiab] OR "near-miss"[tiab] OR "root cause analysis"[tiab] OR undertriage[tiab] OR "under-triage"[tiab] OR "failure to rescue"[tiab])"""
+# ---------------------------------------------------------------------------
+# The three term groups, transcribed from protocol v7 step 1.
+# ---------------------------------------------------------------------------
+TERM_GROUPS = {
+    # A. How clinicians think.
+    "thinking": [
+        '"Clinical Reasoning"[MeSH]',
+        '"Clinical Decision-Making"[MeSH]',
+        '"Judgment"[MeSH]',
+        '"Uncertainty"[MeSH]',
+        '"Delayed Diagnosis"[MeSH]',
+        '"clinical reasoning"[tiab]',
+        '"diagnostic reasoning"[tiab]',
+        '"clinical judgment"[tiab]',
+        '"clinical judgement"[tiab]',
+        '"clinical decision making"[tiab]',
+        '"clinical gestalt"[tiab]',
+        '"gestalt"[tiab]',
+        '"clinical intuition"[tiab]',
+        '"diagnostic uncertainty"[tiab]',
+        '"tolerance of uncertainty"[tiab]',
+        '"cognitive load"[tiab]',
+        '"cognitive burden"[tiab]',
+        '"situation awareness"[tiab]',
+        '"situational awareness"[tiab]',
+        '"sensemaking"[tiab]',
+        '"metacognition"[tiab]',
+        '"macrocognition"[tiab]',
+        '"naturalistic decision making"[tiab]',
+        '"cognitive task analysis"[tiab]',
+        '"dual process"[tiab]',
+        '"cognitive bias"[tiab]',
+        '"cognitive biases"[tiab]',
+        '"anchoring bias"[tiab]',
+        '"premature closure"[tiab]',
+        '"availability bias"[tiab]',
+        '"confirmation bias"[tiab]',
+        '"missed diagnosis"[tiab]',
+        '"delayed diagnosis"[tiab]',
+        '"diagnostic delay"[tiab]',
+    ],
+    # B. Where things go wrong.
+    "failure": [
+        '"Diagnostic Errors"[MeSH]',
+        '"Medical Errors"[MeSH]',
+        '"Malpractice"[MeSH]',
+        '"Failure to Rescue, Health Care"[MeSH]',
+        '"diagnostic error"[tiab]',
+        '"diagnostic errors"[tiab]',
+        '"medical error"[tiab]',
+        '"medical errors"[tiab]',
+        '"misdiagnosis"[tiab]',
+        '"misdiagnosed"[tiab]',
+        '"malpractice"[tiab]',
+        '"malpractice claim"[tiab]',
+        '"malpractice claims"[tiab]',
+        '"near miss"[tiab]',
+        '"near misses"[tiab]',
+        '"undertriage"[tiab]',
+        '"under-triage"[tiab]',
+        '"failure to rescue"[tiab]',
+        '"preventable harm"[tiab]',
+        '"preventable adverse"[tiab]',
+    ],
+    # C. Coordination and communication.
+    # This group does not exist at all in the old 01_search.py. It is the
+    # single largest substantive change in v7's search.
+    #
+    # 2026-08-28: per-term counts showed "Continuity of Patient Care"[MeSH]
+    # (57,969 of 94,326 primary_care hits), "referral"[tiab] (16,869),
+    # "consultation"[tiab] (11,297) and "triage"[tiab]/"Triage"[MeSH] swamping
+    # this group with generic health-services papers, not cognitive
+    # coordination/communication papers. Restricted the three MeSH terms to
+    # [majr] (major topic, not incidental) and dropped the bare
+    # referral/consultation/triage tiab terms, which have no majr equivalent
+    # and would otherwise swamp the group regardless. The Triage MeSH/tiab
+    # removal is approved decision 2; the majr restriction on Continuity of
+    # Patient Care / Referral and Consultation and the dropped bare
+    # referral/consultation terms are approved decision 5. The failure group
+    # likewise drops the broad "adverse event(s)" title/abstract terms
+    # (decision 2). Specific terms such as undertriage remain. All of these
+    # are recorded in docs/DECISIONS_2026-08-28.md.
+    "coordination": [
+        '"Patient Handoff"[MeSH]',
+        '"Continuity of Patient Care"[majr]',
+        '"Referral and Consultation"[majr]',
+        '"Decision Making, Shared"[MeSH]',
+        '"Patient Care Planning"[MeSH]',
+        '"handoff"[tiab]',
+        '"handoffs"[tiab]',
+        '"hand-off"[tiab]',
+        '"handover"[tiab]',
+        '"handovers"[tiab]',
+        '"care transition"[tiab]',
+        '"care transitions"[tiab]',
+        '"transition of care"[tiab]',
+        '"transitions of care"[tiab]',
+        '"test result follow-up"[tiab]',
+        '"test result followup"[tiab]',
+        '"missed test result"[tiab]',
+        '"missed test results"[tiab]',
+        '"result notification"[tiab]',
+        '"shared decision making"[tiab]',
+        '"shared decision-making"[tiab]',
+        '"goals of care"[tiab]',
+        '"interruption"[tiab]',
+        '"interruptions"[tiab]',
+        '"communication failure"[tiab]',
+        '"communication failures"[tiab]',
+        '"communication breakdown"[tiab]',
+        '"disposition decision"[tiab]',
+        '"disposition decisions"[tiab]',
+        '"alert override"[tiab]',
+        '"alert overrides"[tiab]',
+        '"alert fatigue"[tiab]',
+    ],
+}
 
-# Excluded: other specialties, paediatrics, ICU, non-physicians, med-ed-only,
-# case reports and editorials, and patient-cognition topics that hijack the word
-# "cognitive" (dementia, cognitive impairment, CBT). None of this touches WHICH
-# tasks are in scope - only who/where/what kind of source.
-EXCLUDE = """NOT ("Pediatrics"[majr] OR "Infant"[majr] OR "Child"[majr] OR child[ti] OR children[ti] OR pediatric[ti] OR paediatric[ti] OR infant[ti] OR infants[ti] OR neonatal[ti] OR "Intensive Care Units"[majr] OR "Radiology"[majr] OR "Pathology"[majr] OR "Psychiatry"[majr] OR "Dentistry"[majr] OR "Students, Medical"[majr] OR "Education, Medical"[majr] OR "Internship and Residency"[majr] OR veterinary[ti] OR nurses[ti] OR nursing[ti] OR pharmacist[ti] OR pharmacists[ti] OR dental[ti])
-NOT ("Case Reports"[pt] OR Editorial[pt] OR Comment[pt] OR Letter[pt] OR "Historical Article"[pt])
-NOT ("Cognitive Dysfunction"[majr] OR "Cognitive Behavioral Therapy"[majr] OR "Dementia"[majr] OR "Cognition Disorders"[majr] OR "Neuropsychological Tests"[majr] OR "cognitive impairment"[ti] OR "cognitive decline"[ti] OR "cognitive behavioral"[ti] OR "cognitive screening"[ti] OR "cognitive function"[ti])"""
 
-TERM = f"{SETTING} AND ({COGNITION} OR {HARM}) {EXCLUDE} {DATES}"
+def block(terms):
+    return "(" + " OR ".join(terms) + ")"
 
-FIELDS = ["pmid","source_signal","year","journal","title","abstract","doi","pmc","authors"]
 
-def search(term):
-    q = urllib.parse.urlencode({"db":"pubmed","term":term,"retmax":10000,
-                                "retmode":"json","email":EMAIL})
-    r = json.loads(fetch(EUTILS+"esearch.fcgi?"+q))["esearchresult"]
-    return r["idlist"], int(r["count"])
+def query(setting, groups=None):
+    """setting AND (one or more term groups) AND filters."""
+    groups = groups or list(TERM_GROUPS)
+    content = "(" + " OR ".join(block(TERM_GROUPS[g]) for g in groups) + ")"
+    return f"{block(SETTINGS[setting])} AND {content} AND ({FILTERS})"
 
-def details(pmids):
-    out=[]
-    for i in range(0,len(pmids),150):
-        chunk=pmids[i:i+150]
-        q=urllib.parse.urlencode({"db":"pubmed","id":",".join(chunk),"retmode":"xml","email":EMAIL})
-        xml=fetch(EUTILS+"efetch.fcgi?"+q).decode("utf-8","ignore")
-        for art in re.findall(r"<PubmedArticle>.*?</PubmedArticle>", xml, re.S):
-            def one(pat):
-                m=re.search(pat,art,re.S)
-                return html.unescape(re.sub(r"<[^>]+>","",m.group(1))).strip() if m else ""
-            abstract=" ".join(html.unescape(re.sub(r"<[^>]+>","",t)).strip()
-                for t in re.findall(r"<AbstractText[^>]*>(.*?)</AbstractText>",art,re.S))
-            ids=dict(re.findall(r'<ArticleId IdType="(\w+)">(.*?)</ArticleId>',art))
-            names=re.findall(r"<LastName>(.*?)</LastName>",art)
-            out.append({"pmid":one(r"<PMID[^>]*>(.*?)</PMID>"),
-                "year":one(r"<PubDate>.*?<Year>(\d{4})</Year>") or one(r"<Year>(\d{4})</Year>"),
-                "journal":one(r"<ISOAbbreviation>(.*?)</ISOAbbreviation>"),
-                "title":one(r"<ArticleTitle[^>]*>(.*?)</ArticleTitle>"),
-                "abstract":abstract,"doi":ids.get("doi",""),"pmc":ids.get("pmc",""),
-                "authors":"; ".join(names[:3])+(" et al." if len(names)>3 else "")})
-    return out
+
+def main():
+    require_email()
+    counts_only = "--counts-only" in sys.argv
+    per_term = "--per-term" in sys.argv
+
+    prov = provenance(os.path.abspath(__file__))
+    log, group_counts, term_counts, pool = [], [], [], {}
+
+    print("\n=== Term group counts per setting (the step 1 gate) ===")
+    for setting in SETTINGS:
+        for g in TERM_GROUPS:
+            n = esearch_count(query(setting, [g]))
+            group_counts.append({"setting": setting, "term_group": g, "hits": n})
+            print(f"  {setting:20s} {g:14s} {n:>8,}")
+
+    if per_term:
+        print("\n=== Per-term counts (which terms are actually carrying the query) ===")
+        for setting in SETTINGS:
+            for g, terms in TERM_GROUPS.items():
+                for t in terms:
+                    q = f"{block(SETTINGS[setting])} AND {t} AND ({FILTERS})"
+                    n = esearch_count(q)
+                    term_counts.append({"setting": setting, "term_group": g,
+                                        "term": t, "hits": n})
+                    flag = "  <- returns nothing" if n == 0 else ""
+                    print(f"  {setting:20s} {g:12s} {t:38s} {n:>7,}{flag}")
+        write_csv(os.path.join(DATA, "01_counts_by_term.csv"), term_counts,
+                  ["setting", "term_group", "term", "hits"])
+
+    print("\n=== Union query per setting ===")
+    for setting in SETTINGS:
+        q = query(setting)
+        if counts_only:
+            n = esearch_count(q)
+            ids = []
+        else:
+            print(f"  [{setting}] downloading PMID list")
+            ids, n = esearch_all_pmids(q)
+            pool[setting] = ids
+        print(f"  {setting:20s} {n:>8,} records")
+        log.append({"setting": setting, "hits": n, "pmids_downloaded": len(ids),
+                    "query": q})
+
+    write_csv(os.path.join(DATA, "01_search_log.csv"), log,
+              ["setting", "hits", "pmids_downloaded", "query"])
+    write_csv(os.path.join(DATA, "01_counts_by_group.csv"), group_counts,
+              ["setting", "term_group", "hits"])
+
+    if not counts_only:
+        for setting, ids in pool.items():
+            write_csv(os.path.join(DATA, f"01_pmids_{setting}.csv"),
+                      [{"pmid": p, "setting": setting} for p in ids],
+                      ["pmid", "setting"])
+
+    prov.update({
+        "decision_id": DECISION_ID,
+        "filters": FILTERS,
+        "approved_search_exclusions": [
+            '"adverse event"[tiab]',
+            '"adverse events"[tiab]',
+            '"triage"[tiab]',
+            '"Triage"[MeSH/majr]',
+        ],
+        "approved_search_restrictions_decision_5": [
+            '"Continuity of Patient Care"[MeSH] restricted to [majr]',
+            '"Referral and Consultation"[MeSH] restricted to [majr]',
+            'bare "referral"[tiab] dropped',
+            'bare "consultation"[tiab] dropped',
+        ],
+        "settings": {k: len(v) for k, v in SETTINGS.items()},
+        "term_group_sizes": {k: len(v) for k, v in TERM_GROUPS.items()},
+        "counts_only": counts_only,
+        "per_term": per_term,
+        "union_hits": {r["setting"]: r["hits"] for r in log},
+    })
+    write_json(os.path.join(DATA, "01_run_manifest.json"), prov)
+
+    # ---- the gate ----------------------------------------------------------
+    print("\n=== Before moving to step 2, check these ===")
+    coord = {r["setting"]: r["hits"] for r in group_counts
+             if r["term_group"] == "coordination"}
+    for setting, n in coord.items():
+        verdict = ("usable" if n >= 500 else
+                   "THIN - the coordination group may not be pulling its weight")
+        print(f"  coordination, {setting}: {n:,} ({verdict})")
+    print("  Also confirm: both settings return enough records to draw 250 from,")
+    print("  and no single term in --per-term is returning zero (a typo shows up")
+    print("  as a zero, not as an error).")
+    print("\nDone. Next: python3 scripts/11_neutral_sample.py")
+
 
 if __name__ == "__main__":
-    ids, count = search(TERM)
-    print(f"  {count} hits (broad, unconditioned net - no task categories assumed)")
-    rows = details(ids)
-    # source_signal is informational only (which half of the net caught it) -
-    # it is NOT used anywhere downstream to sort records into pre-set buckets.
-    for r in rows:
-        r["source_signal"] = "unlabelled"
-    write_csv(os.path.join(DATA,"01_all_records.csv"), rows, FIELDS)
-    write_csv(os.path.join(DATA,"01_search_log.csv"),
-        [{"query":TERM,"hits":count,"downloaded":len(rows)}], ["query","hits","downloaded"])
-    print(f"\n  {len(rows)} rows downloaded (duplicates removed in step 2)")
-    print("  Nothing here is pre-sorted into a task or family. That happens inductively")
-    print("  in step 8, from what the extracted papers actually say.")
+    main()
