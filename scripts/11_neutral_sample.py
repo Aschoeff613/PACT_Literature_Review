@@ -3,6 +3,7 @@ STEP 2 - Draw the sample.
 
 Protocol v7, step 2:
   - 250 papers from emergency medicine, 250 from primary care
+    (raised to 1,000 + 1,000 by decision 9, docs/DECISIONS_2026-09-22.md)
   - random draw, seed recorded so it can be reproduced
   - numbered in batches of 100
 
@@ -45,8 +46,9 @@ from common import (DATA, efetch_records, need, provenance, read_csv,
 
 # --- fixed before drawing. Do not change once step 3 has started. ----------
 SEED = 20260828
-N_PER_SETTING = 250
-OVERSAMPLE = 1.30          # 325 drawn per setting to survive the abstract filter
+N_PER_SETTING = 1000      # 250 in v7; raised 2026-09-22 (decision 9) so step 4 can
+                          # fill 75 AI-kept papers per setting at a ~10% include rate
+OVERSAMPLE = 1.30          # 1,300 drawn per setting to survive the abstract filter
 OVERLAP_RULE = "drop"      # approved 2026-08-28; do not change without amendment
 MIN_ABSTRACT_CHARS = 100
 DECISION_ID = "2026-09-22-search-tightening"

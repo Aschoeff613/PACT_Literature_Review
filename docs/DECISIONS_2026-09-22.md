@@ -1,7 +1,7 @@
 # PACT literature review: search tightening, 22 September 2026
 
 Approved 22 September 2026 by the PI. Amends protocol v7 and the
-28 August 2026 decisions (`docs/DECISIONS_2026-08-28.md`) for step 1. New
+28 August 2026 decisions (`docs/DECISIONS_2026-08-28.md`) for steps 1 and 2. New
 decision identifier: `2026-09-22-search-tightening`. Steps 2 and 3 refuse to
 consume outputs that do not carry it.
 
@@ -38,6 +38,17 @@ measure setting detection rather than cognitive content.
    `"general practice"` and `"general practitioner(s)"` title/abstract terms
    and the other primary-care MeSH headings are unchanged: general practitioner
    is the British and Commonwealth term for a primary care physician.
+
+9. **Sample raised from 250 + 250 to 1,000 + 1,000.** Screening trials on
+   70 papers put the either-model include rate near 10% (7 of 70; 4 of 50 on
+   the current search). At that rate 500 papers yield roughly 40-50 AI-kept
+   papers, which cannot fill step 4's design of 75 AI-kept papers per setting
+   and is thin for the step 13 saturation plot. 1,000 per setting is the
+   smallest round size that fills step 4 at that rate. Same seed (20260828):
+   because the draw takes a prefix of a seeded shuffle, the 1,000-per-setting
+   sample contains the earlier 250-per-setting sample, so papers already
+   screened carry over. Budget: the whole pipeline must stay under $50 of
+   model spend; screening 2,000 papers is estimated at about $18.
 
 ## Measured effect before adoption
 

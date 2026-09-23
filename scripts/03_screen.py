@@ -38,6 +38,7 @@ import json
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 import urllib.error
 import urllib.request
 
@@ -218,7 +219,15 @@ def main():
     done = {r["pmid"] for r in results
             if r.get("a_decision") not in ("", "ERROR", "MALFORMED")
             and r.get("b_decision") not in ("", "ERROR", "MALFORMED")}
-    results = [r for r in results if r["pmid"] in done]
+    # Keep only rows for papers in the CURRENT sample, and refresh their
+    # position fields from it. When the sample is enlarged, a paper keeps its
+    # PMID but gets a new record_no / batch_100 / block_50; stale values here
+    # would corrupt step 4 blocks and the step 13 saturation plot.
+    current = {r["pmid"]: r for r in rows}
+    results = [r for r in results if r["pmid"] in done and r["pmid"] in current]
+    for r in results:
+        for k in ("record_no", "batch_100", "block_50", "source_setting"):
+            r[k] = current[r["pmid"]].get(k, "")
     todo = [r for r in rows if r["pmid"] not in done]
     print(f"  {len(rows)} in sample, {len(done)} already screened, {len(todo)} to do")
 
@@ -238,9 +247,15 @@ def main():
         for pmid, tag, prior, cur in stale[:5]:
             print(f"    pmid {pmid} [{tag}]: recorded {prior!r}, current {cur!r}")
 
+    workers = 1
+    if "--workers" in sys.argv:
+        workers = max(1, int(sys.argv[sys.argv.index("--workers") + 1]))
+
     stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    errors = 0
-    for i, r in enumerate(todo, 1):
+
+    def screen_one(r):
+        """Both models on one paper. Returns (row, number of errors)."""
+        errs = 0
         out = {k: r.get(k, "") for k in
                ("record_no", "batch_100", "block_50", "pmid", "source_setting",
                 "year", "journal", "title")}
@@ -256,11 +271,11 @@ def main():
                 out[tag + "_setting_seen"] = d["setting_seen"]
                 out[tag + "_tasks"] = d["tasks"]
                 if d["decision"] == "MALFORMED":
-                    errors += 1
+                    errs += 1
             except Exception as e:
                 out[tag + "_decision"] = "ERROR"
                 out[tag + "_reason"] = str(e)[:200]
-                errors += 1
+                errs += 1
             time.sleep(0.2)
 
         da, db = out.get("a_decision"), out.get("b_decision")
@@ -271,12 +286,24 @@ def main():
         # and the other said "neither", which would overcount this.
         a_seen, b_seen = out.get("a_setting_seen", ""), out.get("b_setting_seen", "")
         out["setting_mismatch"] = "yes" if a_seen == "neither" and b_seen == "neither" else "no"
-        results.append(out)
+        return out, errs
 
-        if i % 20 == 0 or i == len(todo):
-            write_csv(OUT_FILE, results, FIELDS)
-            print(f"    {i}/{len(todo)} screened")
+    # --workers N screens N papers at once. Each paper is still read by both
+    # models independently; only wall-clock time changes. Results are written
+    # from this thread only, so the CSV is never written concurrently.
+    def by_record_no(rs):
+        return sorted(rs, key=lambda x: int(x.get("record_no") or 0))
 
+    errors = 0
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for i, (out, errs) in enumerate(pool.map(screen_one, todo), 1):
+            results.append(out)
+            errors += errs
+            if i % 20 == 0 or i == len(todo):
+                write_csv(OUT_FILE, by_record_no(results), FIELDS)
+                print(f"    {i}/{len(todo)} screened", flush=True)
+
+    results = by_record_no(results)
     write_csv(OUT_FILE, results, FIELDS)
 
     scored = [r for r in results if r.get("a_decision") in ("include", "exclude")
@@ -303,7 +330,7 @@ def main():
                  "errors": errors, "include_a": inc_a, "include_b": inc_b,
                  "either_include": either, "both_include": both,
                  "disagreed": dis, "setting_neither": neither_setting,
-                 "limit": limit})
+                 "limit": limit, "workers": workers})
     write_json(os.path.join(DATA, "03_screen_manifest.json"), prov)
 
     print("\n  Two things to read before step 4:")

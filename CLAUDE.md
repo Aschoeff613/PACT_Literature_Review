@@ -36,7 +36,7 @@ moving on: record hits per setting, and confirm the coordination terms return a
 usable number.
 
 **Step 2, `scripts/11_neutral_sample.py`.** 250 papers from emergency medicine,
-250 from primary care. Random draw, seed recorded. Numbered in batches of 100.
+250 from primary care (raised to 1,000 + 1,000 on 22 Sept 2026, decision 9). Random draw, seed recorded. Numbered in batches of 100.
 
 **Step 3, `scripts/03_screen.py`.** Two models read all 500 titles and abstracts
 separately. In scope means the paper *actually examines what a clinician notices,
@@ -131,6 +131,9 @@ that errored.
 - Remove dental records from the search; dentistry added to the prompt and the
   human interface as out of scope.
 - Restrict `"Primary Health Care"[MeSH]` to `[majr]`.
+- Raise the sample to 1,000 per setting (2,000 total), same seed, so step 4 can
+  fill 75 AI-kept papers per setting. Whole-pipeline model spend must stay
+  under $50.
 - Evidence: a 20-paper screening trial found 55% of papers were in neither
   setting (64% of the primary-care arm). Details and measured effect in
   `docs/DECISIONS_2026-09-22.md`. Decision id `2026-09-22-search-tightening`.
