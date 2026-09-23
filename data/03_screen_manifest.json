@@ -1,6 +1,6 @@
 {
-  "run_utc": "2026-09-23T02:55:44Z",
-  "git_version": "3109a34-dirty",
+  "run_utc": "2026-09-23T02:56:34Z",
+  "git_version": "1e7bd2c",
   "script": "03_screen.py",
   "script_sha256_16": "3e878446def844a8",
   "common_sha256_16": "019734974960a8a0",
@@ -21,5 +21,5 @@
   "disagreed": 125,
   "setting_neither": 867,
   "limit": null,
-  "workers": 2
+  "workers": 1
 }
