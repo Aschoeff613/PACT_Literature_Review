@@ -210,9 +210,8 @@ def main():
     if "--limit" in sys.argv:
         limit = int(sys.argv[sys.argv.index("--limit") + 1])
 
-    rows = read_csv(need(IN_FILE))
-    if limit:
-        rows = rows[:limit]
+    all_rows = read_csv(need(IN_FILE))
+    rows = all_rows[:limit] if limit else all_rows
 
     # Resume. Safe to re-run after a crash or a closed laptop.
     results = read_csv(OUT_FILE) if os.path.exists(OUT_FILE) else []
@@ -223,7 +222,9 @@ def main():
     # position fields from it. When the sample is enlarged, a paper keeps its
     # PMID but gets a new record_no / batch_100 / block_50; stale values here
     # would corrupt step 4 blocks and the step 13 saturation plot.
-    current = {r["pmid"]: r for r in rows}
+    # Built from the FULL sample, not the --limit slice: a --limit run must
+    # not discard papers screened earlier that fall outside its slice.
+    current = {r["pmid"]: r for r in all_rows}
     results = [r for r in results if r["pmid"] in done and r["pmid"] in current]
     for r in results:
         for k in ("record_no", "batch_100", "block_50", "source_setting"):
