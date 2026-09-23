@@ -1,12 +1,12 @@
 {
-  "run_utc": "2026-08-28T18:08:26Z",
-  "git_version": "8c79337",
+  "run_utc": "2026-09-23T01:39:57Z",
+  "git_version": "083cb54",
   "script": "01_search.py",
-  "script_sha256_16": "d68db4bbd4835f41",
+  "script_sha256_16": "64705f29c112c386",
   "common_sha256_16": "019734974960a8a0",
-  "python": "3.13.5",
-  "decision_id": "2026-08-28-method-amendment",
-  "filters": "(\"2005\"[dp] : \"2026\"[dp]) AND English[la] NOT (\"Case Reports\"[pt] OR \"Editorial\"[pt] OR \"Comment\"[pt] OR \"Letter\"[pt] OR \"News\"[pt] OR \"Published Erratum\"[pt])",
+  "python": "3.14.0",
+  "decision_id": "2026-09-22-search-tightening",
+  "filters": "(\"2005\"[dp] : \"2026\"[dp]) AND English[la] NOT (\"Case Reports\"[pt] OR \"Editorial\"[pt] OR \"Comment\"[pt] OR \"Letter\"[pt] OR \"News\"[pt] OR \"Published Erratum\"[pt]) NOT ((\"Infant\"[MeSH] OR \"Child\"[MeSH] OR \"Adolescent\"[MeSH]) NOT \"Adult\"[MeSH]) NOT (\"Dentistry\"[MeSH] OR \"Dentists\"[MeSH])",
   "approved_search_exclusions": [
     "\"adverse event\"[tiab]",
     "\"adverse events\"[tiab]",
@@ -18,6 +18,11 @@
     "\"Referral and Consultation\"[MeSH] restricted to [majr]",
     "bare \"referral\"[tiab] dropped",
     "bare \"consultation\"[tiab] dropped"
+  ],
+  "approved_search_changes_2026_09_22": [
+    "children-only records removed: (Infant OR Child OR Adolescent)[MeSH] NOT Adult[MeSH]",
+    "dental records removed: Dentistry[MeSH] OR Dentists[MeSH]",
+    "\"Primary Health Care\"[MeSH] restricted to [majr]"
   ],
   "settings": {
     "emergency_medicine": 9,
@@ -31,7 +36,7 @@
   "counts_only": false,
   "per_term": true,
   "union_hits": {
-    "emergency_medicine": 17290,
-    "primary_care": 54558
+    "emergency_medicine": 15477,
+    "primary_care": 45418
   }
 }

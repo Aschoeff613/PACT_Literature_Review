@@ -1,173 +1,173 @@
 ﻿setting,term_group,term,hits
-emergency_medicine,thinking,"""Clinical Reasoning""[MeSH]",52
-emergency_medicine,thinking,"""Clinical Decision-Making""[MeSH]",688
-emergency_medicine,thinking,"""Judgment""[MeSH]",45
-emergency_medicine,thinking,"""Uncertainty""[MeSH]",110
-emergency_medicine,thinking,"""Delayed Diagnosis""[MeSH]",367
-emergency_medicine,thinking,"""clinical reasoning""[tiab]",218
-emergency_medicine,thinking,"""diagnostic reasoning""[tiab]",69
-emergency_medicine,thinking,"""clinical judgment""[tiab]",353
-emergency_medicine,thinking,"""clinical judgement""[tiab]",150
-emergency_medicine,thinking,"""clinical decision making""[tiab]",1406
+emergency_medicine,thinking,"""Clinical Reasoning""[MeSH]",51
+emergency_medicine,thinking,"""Clinical Decision-Making""[MeSH]",602
+emergency_medicine,thinking,"""Judgment""[MeSH]",44
+emergency_medicine,thinking,"""Uncertainty""[MeSH]",102
+emergency_medicine,thinking,"""Delayed Diagnosis""[MeSH]",298
+emergency_medicine,thinking,"""clinical reasoning""[tiab]",207
+emergency_medicine,thinking,"""diagnostic reasoning""[tiab]",68
+emergency_medicine,thinking,"""clinical judgment""[tiab]",325
+emergency_medicine,thinking,"""clinical judgement""[tiab]",139
+emergency_medicine,thinking,"""clinical decision making""[tiab]",1305
 emergency_medicine,thinking,"""clinical gestalt""[tiab]",46
-emergency_medicine,thinking,"""gestalt""[tiab]",156
-emergency_medicine,thinking,"""clinical intuition""[tiab]",15
-emergency_medicine,thinking,"""diagnostic uncertainty""[tiab]",196
-emergency_medicine,thinking,"""tolerance of uncertainty""[tiab]",7
-emergency_medicine,thinking,"""cognitive load""[tiab]",107
-emergency_medicine,thinking,"""cognitive burden""[tiab]",29
-emergency_medicine,thinking,"""situation awareness""[tiab]",59
-emergency_medicine,thinking,"""situational awareness""[tiab]",165
+emergency_medicine,thinking,"""gestalt""[tiab]",141
+emergency_medicine,thinking,"""clinical intuition""[tiab]",14
+emergency_medicine,thinking,"""diagnostic uncertainty""[tiab]",171
+emergency_medicine,thinking,"""tolerance of uncertainty""[tiab]",6
+emergency_medicine,thinking,"""cognitive load""[tiab]",100
+emergency_medicine,thinking,"""cognitive burden""[tiab]",28
+emergency_medicine,thinking,"""situation awareness""[tiab]",52
+emergency_medicine,thinking,"""situational awareness""[tiab]",149
 emergency_medicine,thinking,"""sensemaking""[tiab]",18
-emergency_medicine,thinking,"""metacognition""[tiab]",17
+emergency_medicine,thinking,"""metacognition""[tiab]",18
 emergency_medicine,thinking,"""macrocognition""[tiab]",5
 emergency_medicine,thinking,"""naturalistic decision making""[tiab]",3
 emergency_medicine,thinking,"""cognitive task analysis""[tiab]",23
 emergency_medicine,thinking,"""dual process""[tiab]",11
-emergency_medicine,thinking,"""cognitive bias""[tiab]",40
-emergency_medicine,thinking,"""cognitive biases""[tiab]",53
-emergency_medicine,thinking,"""anchoring bias""[tiab]",16
+emergency_medicine,thinking,"""cognitive bias""[tiab]",38
+emergency_medicine,thinking,"""cognitive biases""[tiab]",52
+emergency_medicine,thinking,"""anchoring bias""[tiab]",14
 emergency_medicine,thinking,"""premature closure""[tiab]",12
 emergency_medicine,thinking,"""availability bias""[tiab]",5
 emergency_medicine,thinking,"""confirmation bias""[tiab]",5
-emergency_medicine,thinking,"""missed diagnosis""[tiab]",176
-emergency_medicine,thinking,"""delayed diagnosis""[tiab]",414
-emergency_medicine,thinking,"""diagnostic delay""[tiab]",113
-emergency_medicine,failure,"""Diagnostic Errors""[MeSH]",1463
-emergency_medicine,failure,"""Medical Errors""[MeSH]",2627
-emergency_medicine,failure,"""Malpractice""[MeSH]",279
-emergency_medicine,failure,"""Failure to Rescue, Health Care""[MeSH]",26
-emergency_medicine,failure,"""diagnostic error""[tiab]",201
-emergency_medicine,failure,"""diagnostic errors""[tiab]",246
-emergency_medicine,failure,"""medical error""[tiab]",131
-emergency_medicine,failure,"""medical errors""[tiab]",319
-emergency_medicine,failure,"""misdiagnosis""[tiab]",510
-emergency_medicine,failure,"""misdiagnosed""[tiab]",371
-emergency_medicine,failure,"""malpractice""[tiab]",254
-emergency_medicine,failure,"""malpractice claim""[tiab]",14
-emergency_medicine,failure,"""malpractice claims""[tiab]",54
-emergency_medicine,failure,"""near miss""[tiab]",45
-emergency_medicine,failure,"""near misses""[tiab]",42
-emergency_medicine,failure,"""undertriage""[tiab]",523
-emergency_medicine,failure,"""under-triage""[tiab]",176
-emergency_medicine,failure,"""failure to rescue""[tiab]",71
-emergency_medicine,failure,"""preventable harm""[tiab]",23
-emergency_medicine,failure,"""preventable adverse""[tiab]",55
-emergency_medicine,coordination,"""Patient Handoff""[MeSH]",253
-emergency_medicine,coordination,"""Continuity of Patient Care""[majr]",4610
-emergency_medicine,coordination,"""Referral and Consultation""[majr]",1437
-emergency_medicine,coordination,"""Decision Making, Shared""[MeSH]",56
-emergency_medicine,coordination,"""Patient Care Planning""[MeSH]",1425
-emergency_medicine,coordination,"""handoff""[tiab]",237
-emergency_medicine,coordination,"""handoffs""[tiab]",184
-emergency_medicine,coordination,"""hand-off""[tiab]",35
-emergency_medicine,coordination,"""handover""[tiab]",321
+emergency_medicine,thinking,"""missed diagnosis""[tiab]",155
+emergency_medicine,thinking,"""delayed diagnosis""[tiab]",351
+emergency_medicine,thinking,"""diagnostic delay""[tiab]",105
+emergency_medicine,failure,"""Diagnostic Errors""[MeSH]",1245
+emergency_medicine,failure,"""Medical Errors""[MeSH]",2279
+emergency_medicine,failure,"""Malpractice""[MeSH]",251
+emergency_medicine,failure,"""Failure to Rescue, Health Care""[MeSH]",25
+emergency_medicine,failure,"""diagnostic error""[tiab]",177
+emergency_medicine,failure,"""diagnostic errors""[tiab]",223
+emergency_medicine,failure,"""medical error""[tiab]",122
+emergency_medicine,failure,"""medical errors""[tiab]",286
+emergency_medicine,failure,"""misdiagnosis""[tiab]",459
+emergency_medicine,failure,"""misdiagnosed""[tiab]",328
+emergency_medicine,failure,"""malpractice""[tiab]",236
+emergency_medicine,failure,"""malpractice claim""[tiab]",15
+emergency_medicine,failure,"""malpractice claims""[tiab]",50
+emergency_medicine,failure,"""near miss""[tiab]",36
+emergency_medicine,failure,"""near misses""[tiab]",38
+emergency_medicine,failure,"""undertriage""[tiab]",464
+emergency_medicine,failure,"""under-triage""[tiab]",157
+emergency_medicine,failure,"""failure to rescue""[tiab]",68
+emergency_medicine,failure,"""preventable harm""[tiab]",22
+emergency_medicine,failure,"""preventable adverse""[tiab]",50
+emergency_medicine,coordination,"""Patient Handoff""[MeSH]",231
+emergency_medicine,coordination,"""Continuity of Patient Care""[majr]",4111
+emergency_medicine,coordination,"""Referral and Consultation""[majr]",1268
+emergency_medicine,coordination,"""Decision Making, Shared""[MeSH]",44
+emergency_medicine,coordination,"""Patient Care Planning""[MeSH]",1239
+emergency_medicine,coordination,"""handoff""[tiab]",208
+emergency_medicine,coordination,"""handoffs""[tiab]",161
+emergency_medicine,coordination,"""hand-off""[tiab]",30
+emergency_medicine,coordination,"""handover""[tiab]",317
 emergency_medicine,coordination,"""handovers""[tiab]",112
-emergency_medicine,coordination,"""care transition""[tiab]",193
-emergency_medicine,coordination,"""care transitions""[tiab]",396
-emergency_medicine,coordination,"""transition of care""[tiab]",197
-emergency_medicine,coordination,"""transitions of care""[tiab]",304
+emergency_medicine,coordination,"""care transition""[tiab]",186
+emergency_medicine,coordination,"""care transitions""[tiab]",383
+emergency_medicine,coordination,"""transition of care""[tiab]",191
+emergency_medicine,coordination,"""transitions of care""[tiab]",294
 emergency_medicine,coordination,"""test result follow-up""[tiab]",6
 emergency_medicine,coordination,"""test result followup""[tiab]",0
 emergency_medicine,coordination,"""missed test result""[tiab]",0
 emergency_medicine,coordination,"""missed test results""[tiab]",7
 emergency_medicine,coordination,"""result notification""[tiab]",7
-emergency_medicine,coordination,"""shared decision making""[tiab]",442
-emergency_medicine,coordination,"""shared decision-making""[tiab]",442
-emergency_medicine,coordination,"""goals of care""[tiab]",264
-emergency_medicine,coordination,"""interruption""[tiab]",201
-emergency_medicine,coordination,"""interruptions""[tiab]",324
+emergency_medicine,coordination,"""shared decision making""[tiab]",399
+emergency_medicine,coordination,"""shared decision-making""[tiab]",399
+emergency_medicine,coordination,"""goals of care""[tiab]",262
+emergency_medicine,coordination,"""interruption""[tiab]",190
+emergency_medicine,coordination,"""interruptions""[tiab]",303
 emergency_medicine,coordination,"""communication failure""[tiab]",13
-emergency_medicine,coordination,"""communication failures""[tiab]",38
+emergency_medicine,coordination,"""communication failures""[tiab]",34
 emergency_medicine,coordination,"""communication breakdown""[tiab]",14
-emergency_medicine,coordination,"""disposition decision""[tiab]",159
-emergency_medicine,coordination,"""disposition decisions""[tiab]",190
+emergency_medicine,coordination,"""disposition decision""[tiab]",146
+emergency_medicine,coordination,"""disposition decisions""[tiab]",177
 emergency_medicine,coordination,"""alert override""[tiab]",4
 emergency_medicine,coordination,"""alert overrides""[tiab]",4
 emergency_medicine,coordination,"""alert fatigue""[tiab]",33
-primary_care,thinking,"""Clinical Reasoning""[MeSH]",69
-primary_care,thinking,"""Clinical Decision-Making""[MeSH]",1067
-primary_care,thinking,"""Judgment""[MeSH]",139
-primary_care,thinking,"""Uncertainty""[MeSH]",389
-primary_care,thinking,"""Delayed Diagnosis""[MeSH]",721
-primary_care,thinking,"""clinical reasoning""[tiab]",424
-primary_care,thinking,"""diagnostic reasoning""[tiab]",105
-primary_care,thinking,"""clinical judgment""[tiab]",317
-primary_care,thinking,"""clinical judgement""[tiab]",191
-primary_care,thinking,"""clinical decision making""[tiab]",1741
-primary_care,thinking,"""clinical gestalt""[tiab]",4
-primary_care,thinking,"""gestalt""[tiab]",26
-primary_care,thinking,"""clinical intuition""[tiab]",26
-primary_care,thinking,"""diagnostic uncertainty""[tiab]",264
-primary_care,thinking,"""tolerance of uncertainty""[tiab]",20
-primary_care,thinking,"""cognitive load""[tiab]",78
-primary_care,thinking,"""cognitive burden""[tiab]",68
-primary_care,thinking,"""situation awareness""[tiab]",49
-primary_care,thinking,"""situational awareness""[tiab]",83
-primary_care,thinking,"""sensemaking""[tiab]",102
-primary_care,thinking,"""metacognition""[tiab]",33
+primary_care,thinking,"""Clinical Reasoning""[MeSH]",64
+primary_care,thinking,"""Clinical Decision-Making""[MeSH]",849
+primary_care,thinking,"""Judgment""[MeSH]",115
+primary_care,thinking,"""Uncertainty""[MeSH]",323
+primary_care,thinking,"""Delayed Diagnosis""[MeSH]",614
+primary_care,thinking,"""clinical reasoning""[tiab]",381
+primary_care,thinking,"""diagnostic reasoning""[tiab]",100
+primary_care,thinking,"""clinical judgment""[tiab]",260
+primary_care,thinking,"""clinical judgement""[tiab]",162
+primary_care,thinking,"""clinical decision making""[tiab]",1469
+primary_care,thinking,"""clinical gestalt""[tiab]",2
+primary_care,thinking,"""gestalt""[tiab]",16
+primary_care,thinking,"""clinical intuition""[tiab]",22
+primary_care,thinking,"""diagnostic uncertainty""[tiab]",239
+primary_care,thinking,"""tolerance of uncertainty""[tiab]",19
+primary_care,thinking,"""cognitive load""[tiab]",70
+primary_care,thinking,"""cognitive burden""[tiab]",56
+primary_care,thinking,"""situation awareness""[tiab]",37
+primary_care,thinking,"""situational awareness""[tiab]",65
+primary_care,thinking,"""sensemaking""[tiab]",87
+primary_care,thinking,"""metacognition""[tiab]",28
 primary_care,thinking,"""macrocognition""[tiab]",5
-primary_care,thinking,"""naturalistic decision making""[tiab]",3
-primary_care,thinking,"""cognitive task analysis""[tiab]",26
-primary_care,thinking,"""dual process""[tiab]",15
-primary_care,thinking,"""cognitive bias""[tiab]",27
-primary_care,thinking,"""cognitive biases""[tiab]",31
-primary_care,thinking,"""anchoring bias""[tiab]",9
-primary_care,thinking,"""premature closure""[tiab]",17
-primary_care,thinking,"""availability bias""[tiab]",3
-primary_care,thinking,"""confirmation bias""[tiab]",8
-primary_care,thinking,"""missed diagnosis""[tiab]",98
-primary_care,thinking,"""delayed diagnosis""[tiab]",454
-primary_care,thinking,"""diagnostic delay""[tiab]",406
-primary_care,failure,"""Diagnostic Errors""[MeSH]",1181
-primary_care,failure,"""Medical Errors""[MeSH]",4332
-primary_care,failure,"""Malpractice""[MeSH]",328
-primary_care,failure,"""Failure to Rescue, Health Care""[MeSH]",8
-primary_care,failure,"""diagnostic error""[tiab]",140
-primary_care,failure,"""diagnostic errors""[tiab]",211
-primary_care,failure,"""medical error""[tiab]",169
-primary_care,failure,"""medical errors""[tiab]",418
-primary_care,failure,"""misdiagnosis""[tiab]",486
-primary_care,failure,"""misdiagnosed""[tiab]",374
-primary_care,failure,"""malpractice""[tiab]",256
-primary_care,failure,"""malpractice claim""[tiab]",18
-primary_care,failure,"""malpractice claims""[tiab]",68
-primary_care,failure,"""near miss""[tiab]",48
-primary_care,failure,"""near misses""[tiab]",56
-primary_care,failure,"""undertriage""[tiab]",62
-primary_care,failure,"""under-triage""[tiab]",21
-primary_care,failure,"""failure to rescue""[tiab]",33
-primary_care,failure,"""preventable harm""[tiab]",47
-primary_care,failure,"""preventable adverse""[tiab]",83
-primary_care,coordination,"""Patient Handoff""[MeSH]",1643
-primary_care,coordination,"""Continuity of Patient Care""[majr]",32174
-primary_care,coordination,"""Referral and Consultation""[majr]",5732
-primary_care,coordination,"""Decision Making, Shared""[MeSH]",583
-primary_care,coordination,"""Patient Care Planning""[MeSH]",4489
-primary_care,coordination,"""handoff""[tiab]",976
-primary_care,coordination,"""handoffs""[tiab]",782
-primary_care,coordination,"""hand-off""[tiab]",143
-primary_care,coordination,"""handover""[tiab]",1005
-primary_care,coordination,"""handovers""[tiab]",499
-primary_care,coordination,"""care transition""[tiab]",1048
-primary_care,coordination,"""care transitions""[tiab]",1477
-primary_care,coordination,"""transition of care""[tiab]",821
-primary_care,coordination,"""transitions of care""[tiab]",1062
+primary_care,thinking,"""naturalistic decision making""[tiab]",2
+primary_care,thinking,"""cognitive task analysis""[tiab]",24
+primary_care,thinking,"""dual process""[tiab]",14
+primary_care,thinking,"""cognitive bias""[tiab]",21
+primary_care,thinking,"""cognitive biases""[tiab]",29
+primary_care,thinking,"""anchoring bias""[tiab]",8
+primary_care,thinking,"""premature closure""[tiab]",14
+primary_care,thinking,"""availability bias""[tiab]",2
+primary_care,thinking,"""confirmation bias""[tiab]",7
+primary_care,thinking,"""missed diagnosis""[tiab]",84
+primary_care,thinking,"""delayed diagnosis""[tiab]",385
+primary_care,thinking,"""diagnostic delay""[tiab]",376
+primary_care,failure,"""Diagnostic Errors""[MeSH]",930
+primary_care,failure,"""Medical Errors""[MeSH]",3435
+primary_care,failure,"""Malpractice""[MeSH]",242
+primary_care,failure,"""Failure to Rescue, Health Care""[MeSH]",4
+primary_care,failure,"""diagnostic error""[tiab]",119
+primary_care,failure,"""diagnostic errors""[tiab]",191
+primary_care,failure,"""medical error""[tiab]",144
+primary_care,failure,"""medical errors""[tiab]",348
+primary_care,failure,"""misdiagnosis""[tiab]",433
+primary_care,failure,"""misdiagnosed""[tiab]",320
+primary_care,failure,"""malpractice""[tiab]",211
+primary_care,failure,"""malpractice claim""[tiab]",15
+primary_care,failure,"""malpractice claims""[tiab]",51
+primary_care,failure,"""near miss""[tiab]",39
+primary_care,failure,"""near misses""[tiab]",49
+primary_care,failure,"""undertriage""[tiab]",41
+primary_care,failure,"""under-triage""[tiab]",15
+primary_care,failure,"""failure to rescue""[tiab]",15
+primary_care,failure,"""preventable harm""[tiab]",41
+primary_care,failure,"""preventable adverse""[tiab]",64
+primary_care,coordination,"""Patient Handoff""[MeSH]",1397
+primary_care,coordination,"""Continuity of Patient Care""[majr]",28152
+primary_care,coordination,"""Referral and Consultation""[majr]",4844
+primary_care,coordination,"""Decision Making, Shared""[MeSH]",406
+primary_care,coordination,"""Patient Care Planning""[MeSH]",3237
+primary_care,coordination,"""handoff""[tiab]",839
+primary_care,coordination,"""handoffs""[tiab]",655
+primary_care,coordination,"""hand-off""[tiab]",117
+primary_care,coordination,"""handover""[tiab]",894
+primary_care,coordination,"""handovers""[tiab]",456
+primary_care,coordination,"""care transition""[tiab]",872
+primary_care,coordination,"""care transitions""[tiab]",1249
+primary_care,coordination,"""transition of care""[tiab]",658
+primary_care,coordination,"""transitions of care""[tiab]",831
 primary_care,coordination,"""test result follow-up""[tiab]",12
 primary_care,coordination,"""test result followup""[tiab]",0
 primary_care,coordination,"""missed test result""[tiab]",0
-primary_care,coordination,"""missed test results""[tiab]",12
-primary_care,coordination,"""result notification""[tiab]",15
-primary_care,coordination,"""shared decision making""[tiab]",3200
-primary_care,coordination,"""shared decision-making""[tiab]",3200
-primary_care,coordination,"""goals of care""[tiab]",387
-primary_care,coordination,"""interruption""[tiab]",321
-primary_care,coordination,"""interruptions""[tiab]",337
-primary_care,coordination,"""communication failure""[tiab]",16
-primary_care,coordination,"""communication failures""[tiab]",78
-primary_care,coordination,"""communication breakdown""[tiab]",29
-primary_care,coordination,"""disposition decision""[tiab]",37
-primary_care,coordination,"""disposition decisions""[tiab]",46
+primary_care,coordination,"""missed test results""[tiab]",10
+primary_care,coordination,"""result notification""[tiab]",12
+primary_care,coordination,"""shared decision making""[tiab]",2564
+primary_care,coordination,"""shared decision-making""[tiab]",2564
+primary_care,coordination,"""goals of care""[tiab]",294
+primary_care,coordination,"""interruption""[tiab]",255
+primary_care,coordination,"""interruptions""[tiab]",283
+primary_care,coordination,"""communication failure""[tiab]",14
+primary_care,coordination,"""communication failures""[tiab]",71
+primary_care,coordination,"""communication breakdown""[tiab]",23
+primary_care,coordination,"""disposition decision""[tiab]",16
+primary_care,coordination,"""disposition decisions""[tiab]",22
 primary_care,coordination,"""alert override""[tiab]",0
 primary_care,coordination,"""alert overrides""[tiab]",3
 primary_care,coordination,"""alert fatigue""[tiab]",44
