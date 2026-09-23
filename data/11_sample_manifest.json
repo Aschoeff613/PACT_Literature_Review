@@ -1,29 +1,29 @@
 {
-  "run_utc": "2026-08-28T18:10:51Z",
-  "git_version": "c2c49a4",
+  "run_utc": "2026-09-23T01:42:33Z",
+  "git_version": "5b7d840",
   "script": "11_neutral_sample.py",
-  "script_sha256_16": "deffb66588c177a7",
+  "script_sha256_16": "64a5e5ab1162b734",
   "common_sha256_16": "019734974960a8a0",
-  "python": "3.13.5",
-  "decision_id": "2026-08-28-method-amendment",
+  "python": "3.14.0",
+  "decision_id": "2026-09-22-search-tightening",
   "seed": 20260828,
   "n_per_setting": 250,
   "oversample": 1.3,
   "overlap_rule": "drop",
   "min_abstract_chars": 100,
   "pool_sizes": {
-    "emergency_medicine": 11315,
-    "primary_care": 48571
+    "emergency_medicine": 10629,
+    "primary_care": 40571
   },
-  "overlap_n": 5972,
+  "overlap_n": 4841,
   "overlap_assignment": null,
   "kept": {
     "emergency_medicine": 250,
     "primary_care": 250
   },
   "skipped": {
-    "emergency_medicine": 12,
-    "primary_care": 20
+    "emergency_medicine": 3,
+    "primary_care": 21
   },
   "total": 500
 }
