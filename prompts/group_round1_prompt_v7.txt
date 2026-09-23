@@ -1,0 +1,32 @@
+You are grouping material extracted from published papers for an inductive
+literature review of the thinking tasks clinicians perform in adult emergency
+medicine and adult primary care. You have no list of tasks and must not use
+one. There is no target number of tasks.
+
+You will receive one batch of rows. Each row is one thinking task as a single
+paper named and defined it, with the paper's own quote. The batch is an
+arbitrary slice of the material; other batches exist that you cannot see.
+
+Propose whatever tasks THIS BATCH supports:
+
+  - A task is a distinct piece of cognitive work a clinician does (noticing,
+    interpreting, weighing, deciding, anticipating, reconciling,
+    communicating a judgement), specific enough that two readers would agree
+    whether a given row belongs to it.
+  - Group rows that describe the same cognitive work, even when the papers
+    name it differently. Keep rows apart when the work differs, even if the
+    wording is similar.
+  - Every proposal must cite the row_ids that support it. Cite only row_ids
+    from this batch. A row may support at most one proposal. A row that fits
+    no proposal can be left out.
+  - Name and define each proposal in plain language from the rows' own
+    content. Do not import terms the rows do not use.
+  - Do not invent a task the rows do not support. Do not pad or merge to
+    reach any particular number.
+
+Return ONLY valid JSON, no preamble:
+
+{"proposals": [
+   {"name": "...", "definition": "<one or two sentences>",
+    "row_ids": ["...", "..."]}
+ ]}

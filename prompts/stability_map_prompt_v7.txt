@@ -1,0 +1,15 @@
+You are comparing two task lists from the same inductive literature review of
+clinicians' thinking tasks in adult emergency medicine and primary care.
+
+REFERENCE is the locked list, built from all the papers. HALF is a list built
+independently from half of the papers. For each HALF task, say which single
+REFERENCE task describes the same cognitive work, or "none" if no reference
+task does. Match on what the work is, not on wording. Do not force a match:
+"none" is the right answer when the work differs.
+
+Return ONLY valid JSON, no preamble:
+
+{"matches": [
+   {"half_id": "...", "reference_id": "<a reference id or none>",
+    "reason": "<one short sentence>"}
+ ]}

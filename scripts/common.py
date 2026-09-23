@@ -27,6 +27,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # PACT_DATA_DIR lets a test run read and write a scratch copy instead of the
 # real data/ folder. Unset for every real run.
 DATA = os.environ.get("PACT_DATA_DIR") or os.path.join(ROOT, "data")
+# Reviewer pages and sheets. Test runs write them beside the scratch data
+# so test material never lands in the repo.
+VALIDATION = (os.path.join(DATA, "_validation") if os.environ.get("PACT_DATA_DIR")
+              else os.path.join(ROOT, "validation"))
 PROMPTS = os.path.join(ROOT, "prompts")
 
 # NCBI allows 3 requests/sec without a key, 10/sec with one.

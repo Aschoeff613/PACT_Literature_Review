@@ -1,24 +1,24 @@
-# Human validation interface
+# Human review material
 
-`Lit_Review_Web_Interface.html` states the **current** v7 screening criterion,
-matching `prompts/screen_prompt_v7.txt` — the wording was synced on 28 Aug 2026.
+## Step 4 — use these
 
-## Do not review in it yet
+`step4/review_R1.html` … `review_R6.html`: one page per reviewer, 100 papers
+each (two blocks of 50, rotating pairs, per protocol v7). `step4/review_warmup.html`:
+the 10 warm-up papers everyone reads first; they do not count.
 
-Its **embedded records are stale**. It carries 150 records from the
-pre-amendment sample: only 1 of those 150 is in the current
-`data/11_sample_500.csv`, 52 are not retrieved by the amended search at all,
-and 12 are in the 5,972-PMID setting overlap that was deliberately dropped.
+The pages open in any browser and work offline. They **do not save** on their
+own: press *Export CSV* before closing, and use *Resume from file* to carry on
+later. They contain no AI decisions and no task list. Built by
+`scripts/04_validate_sample.py`; see `docs/PIPELINE.md` for what happens next.
 
-Regenerate it from the current sample before any reviewer uses it. The
-generator is already in this repo:
+## Later steps
 
-```sh
-python3 scripts/split_reviewer_html.py --help
-```
+`step8/`, `step11/`, `step12/` are created by the step 8, 11 and 12 scripts
+when those steps are reached.
 
-It builds blinded reviewer pages from `templates/pact_reviewer_template.html`.
-Point it at the current 500-paper sample, then re-cut the step 4 validation set.
+## `Lit_Review_Web_Interface.html` — template only
 
-Until that is done, step 4's AI-versus-human comparison would be measuring
-papers that are not in the study.
+Andrew's interface. It states the v7 criterion (synced with
+`prompts/screen_prompt_v7.txt`, plus the 22 Sept dental exclusion) and is the
+template the step 4 pages are built from. Its own embedded records are from a
+superseded sample: do not review in it directly.

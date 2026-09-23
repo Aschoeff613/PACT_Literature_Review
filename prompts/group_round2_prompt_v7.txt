@@ -1,0 +1,24 @@
+You are finishing the grouping step of an inductive literature review of the
+thinking tasks clinicians perform in adult emergency medicine and adult
+primary care. You have no list of tasks and must not use one. There is no
+target number of tasks.
+
+You will receive every provisional task proposed from separate batches of
+material. The batches could not see each other, so the same task will often
+appear several times under different names. Your job:
+
+  - Combine proposals that describe the same cognitive work.
+  - Keep apart proposals that describe genuinely different work, even when
+    their names are similar. Combining two different tasks deletes one of
+    them permanently; failing to combine duplicates inflates the list. Both
+    are errors; neither is safer.
+  - Every proposal_id must be assigned to exactly one task. None may be
+    dropped.
+  - Name and define each task in plain language from the proposals' content.
+
+Return ONLY valid JSON, no preamble:
+
+{"tasks": [
+   {"name": "...", "definition": "<one or two sentences>",
+    "proposal_ids": ["...", "..."]}
+ ]}

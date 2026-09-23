@@ -39,8 +39,8 @@ import random
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from common import (DATA, ROOT, need, provenance, read_csv, write_csv,
-                    write_json)
+from common import (DATA, ROOT, VALIDATION, need, provenance, read_csv,
+                    write_csv, write_json)
 
 # --- fixed before drawing. Do not change once reviewers have started. -------
 SEED = 20260922
@@ -59,7 +59,7 @@ SAMPLE = os.path.join(DATA, "11_sample_500.csv")
 SCREEN = os.path.join(DATA, "03_screening.csv")
 SCREEN_MANIFEST = os.path.join(DATA, "03_screen_manifest.json")
 TEMPLATE = os.path.join(ROOT, "validation", "Lit_Review_Web_Interface.html")
-PAGE_DIR = os.path.join(ROOT, "validation", "step4")
+PAGE_DIR = os.path.join(VALIDATION, "step4")
 CELLS = [("emergency_medicine", "kept"), ("emergency_medicine", "dropped"),
          ("primary_care", "kept"), ("primary_care", "dropped")]
 

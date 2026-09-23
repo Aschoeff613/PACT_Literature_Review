@@ -1,194 +1,188 @@
 """
-STEP 8 - Inductively cluster the extracted situations into a candidate task list.
+STEPS 9 and 10 - Grouping, rounds one and two.
 
-The whole corpus is clustered at once, with no categories assumed in advance.
-It works the way open coding / thematic analysis works:
+Protocol v7, step 9: the checked thinking-process rows from step 8 go to the
+model in batches of 50. For each batch it proposes whatever tasks that batch
+supports, citing the rows. Batches can't see each other, so the same task
+comes back under different names; that is expected. No target number.
 
-  PASS 1 (open coding). All verified high-risk situations are split into
-  arbitrary batches (just to keep each prompt a manageable size - the batch
-  boundary carries no meaning). For each batch, the model proposes whatever
-  candidate tasks the batch's material actually supports, citing PMIDs. This
-  produces many overlapping, redundant provisional tasks - that is expected
-  and is not a problem, because:
+Step 10: all round-one proposals go to the model together. It combines the
+duplicates, keeps the genuinely different ones, and logs which proposals went
+into each surviving task. That is the candidate list.
 
-  PASS 2 (merge). Every provisional task from every batch is handed to the
-  model in one shot, which merges near-duplicates and keeps genuinely distinct
-  ones, still citing PMIDs back to the batch-level provisional tasks (and
-  through them to source papers). The output is an emergent candidate list,
-  typically 30-50 before human curation down to the 30-40 target.
+Every assignment is kept, so each row traces to a proposal and each proposal
+to a task. Rows are shuffled with a fixed seed before batching, so batch
+boundaries carry no meaning.
 
-Run it with:   python3 scripts/08_cluster.py
+    python3 scripts/08_cluster.py
+Outputs
+    data/09_round1_proposals.csv   every proposal, its batch and its rows
+    data/10_candidate_tasks.csv    the candidate list
+    data/10_row_task_map.csv       row -> proposal -> task
+    data/10_grouping_manifest.json
+
+Step 13's stability check reuses this with a subset of papers:
+    python3 scripts/08_cluster.py --pmids FILE --tag halfA
+which writes data/13_halfA_* instead and leaves the main outputs alone.
+
+Model: PACT_GROUP_MODEL (default anthropic/claude-opus-5). Grouping decides
+the list, so it gets the strongest model; it is also the cheapest step,
+because it reads short rows rather than papers.
 """
-import os, sys, json, time
+import json
+import os
+import random
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from common import read_csv, write_csv, need, DATA
-from importlib import import_module
-api = import_module("03_screen")
-api.OPENAI_MODEL    = "gpt-5.6-terra"      # clustering is judgement; use the stronger tier
-api.ANTHROPIC_MODEL = "claude-sonnet-5"
+from common import (DATA, PROMPTS, check_budget, need, openrouter_chat,
+                    parse_json_reply, provenance, read_csv, write_csv,
+                    write_json)
 
+MODEL = os.environ.get("PACT_GROUP_MODEL", "anthropic/claude-opus-5")
+SEED = 20260924
 BATCH_SIZE = 50
+P1 = os.path.join(PROMPTS, "group_round1_prompt_v7.txt")
+P2 = os.path.join(PROMPTS, "group_round2_prompt_v7.txt")
+ROWS = os.path.join(DATA, "08_rows_for_grouping.csv")
+EST = {"round1": 0.15, "round2": 0.60}      # USD per call, for the budget guard
 
-OPEN_CODING_PROMPT = """You are open-coding a batch of extracted material for an INDUCTIVE
-review, building a taxonomy of high-risk cognitive tasks in adult emergency medicine and
-primary care from the literature alone. You have NOT been given, and must not assume, any
-pre-existing list of task categories. Propose whatever candidate tasks THIS BATCH of material
-actually supports - could be 0, could be 6. Do not aim for a target count.
 
-Each candidate task must:
-  - be phrased as a cognitive demand applied to a specific clinical situation
-  - be specific enough that you could write a scoreable test case for it
-  - cite the PMIDs from THIS BATCH that support it
-  - carry the strongest risk evidence available in the batch, quoted
+def row_line(r):
+    return json.dumps({"row_id": r["row_id"], "task_name": r["task_name"],
+                       "definition": r["definition"][:300], "quote": r["quote"][:300],
+                       "clinical_situation": r["clinical_situation"][:120]},
+                      ensure_ascii=False)
 
-Do NOT propose a task that is only a theory label ("diagnostic reasoning", "clinical
-judgment"). Do NOT invent a task the batch does not support. Do NOT try to make this batch's
-proposals resemble any external framework - describe only what is in front of you.
 
-Good: "Recognising sepsis when the presentation lacks fever or hypotension"
-Good: "Deciding admission versus discharge for an older adult after a fall, with
-       incomplete information about home support"
-Bad:  "Diagnostic reasoning in the emergency department"
-Bad:  "Sepsis"
+def ask(prompt, text, max_tokens, what):
+    check_budget(EST[what], what=f"grouping {what} call")
+    reply, cost = openrouter_chat(MODEL, prompt, text, max_tokens=max_tokens)
+    return parse_json_reply(reply), cost
 
-Return ONLY valid JSON:
-{"tasks": [
-  {"task": "<demand applied to situation>",
-   "cognitive_demand": "<the demand alone>",
-   "clinical_situation": "<the situation alone>",
-   "setting": "emergency" | "primary care" | "both",
-   "why_high_risk": "<the evidence, in one sentence>",
-   "risk_evidence_quote": "<figure or finding quoted from the supplied material>",
-   "supporting_pmids": ["<pmid>", "..."]}]}
-"""
 
-MERGE_PROMPT = """You are merging provisional candidate tasks produced independently from
-different batches of literature during an inductive review. Many describe the same
-underlying cognitive work in different words; some are genuinely distinct. You are looking
-for the true underlying set - do not force a target count, and do not discard a task just
-because it only appeared once, if the risk evidence for it is real.
+def group(rows, tag=""):
+    """Run both rounds on these rows. Returns (proposals, tasks, row_map, cost)."""
+    with open(need(P1), encoding="utf-8") as f:
+        p1 = f.read()
+    with open(need(P2), encoding="utf-8") as f:
+        p2 = f.read()
+    rows = sorted(rows, key=lambda r: r["row_id"])
+    random.Random(SEED).shuffle(rows)
+    by_id = {r["row_id"]: r for r in rows}
+    cost = 0.0
 
-For each surviving task:
-  - state it once, in the clearest phrasing available across the provisional versions
-  - union the supporting PMIDs of everything you merged into it
-  - keep the strongest risk evidence quote among the merged versions
-  - note briefly which provisional task-texts you merged (so a human can audit the merge)
+    proposals = []
+    n_batches = (len(rows) + BATCH_SIZE - 1) // BATCH_SIZE
+    for b in range(n_batches):
+        batch = rows[b * BATCH_SIZE:(b + 1) * BATCH_SIZE]
+        ids = {r["row_id"] for r in batch}
+        text = f"BATCH {b + 1} of {n_batches}, {len(batch)} rows:\n" + "\n".join(row_line(r) for r in batch)
+        d, c = ask(p1, text, 8000, "round1")
+        cost += c
+        used = set()
+        for i, pr in enumerate(d.get("proposals") or [], 1):
+            cited = [x for x in pr.get("row_ids") or [] if x in ids and x not in used]
+            dropped = [x for x in pr.get("row_ids") or [] if x not in ids or x in used]
+            if not cited:
+                continue
+            used.update(cited)
+            proposals.append({"proposal_id": f"{tag}b{b + 1}p{i}", "batch": b + 1,
+                              "name": (pr.get("name") or "").strip(),
+                              "definition": (pr.get("definition") or "").strip(),
+                              "row_ids": cited,
+                              "invalid_citations_dropped": len(dropped)})
+        print(f"    round 1, batch {b + 1}/{n_batches}: {len(batch)} rows -> "
+              f"{sum(p['batch'] == b + 1 for p in proposals)} proposals, "
+              f"{len(ids - used)} rows unassigned", flush=True)
 
-Two provisional tasks are the SAME if a clinician would call them the same cognitive work,
-even in different words. They are DIFFERENT if one is broader/narrower in a way that would
-matter for writing a separate benchmark case for each.
+    lines = []
+    for p in proposals:
+        ex = [by_id[r]["quote"][:160] for r in p["row_ids"][:2]]
+        lines.append(json.dumps({"proposal_id": p["proposal_id"], "name": p["name"],
+                                 "definition": p["definition"], "n_rows": len(p["row_ids"]),
+                                 "example_quotes": ex}, ensure_ascii=False))
+    d, c = ask(p2, f"{len(proposals)} provisional tasks:\n" + "\n".join(lines), 16000, "round2")
+    cost += c
+    pids = {p["proposal_id"] for p in proposals}
+    assigned, tasks = set(), []
+    for i, t in enumerate(d.get("tasks") or [], 1):
+        members = [x for x in t.get("proposal_ids") or [] if x in pids and x not in assigned]
+        if not members:
+            continue
+        assigned.update(members)
+        tasks.append({"task_id": f"{tag}T{i:02d}", "name": (t.get("name") or "").strip(),
+                      "definition": (t.get("definition") or "").strip(),
+                      "proposal_ids": members, "origin": "round2"})
+    # Protocol: no proposal may be dropped. Any the model left out stand alone.
+    for p in proposals:
+        if p["proposal_id"] not in assigned:
+            tasks.append({"task_id": f"{tag}T{len(tasks) + 1:02d}", "name": p["name"],
+                          "definition": p["definition"], "proposal_ids": [p["proposal_id"]],
+                          "origin": "unassigned in round 2; kept as its own task"})
 
-Return ONLY valid JSON:
-{"tasks": [
-  {"task": "<demand applied to situation>",
-   "cognitive_demand": "<the demand alone>",
-   "clinical_situation": "<the situation alone>",
-   "setting": "emergency" | "primary care" | "both",
-   "why_high_risk": "<the evidence, in one sentence>",
-   "risk_evidence_quote": "<strongest quote among merged versions>",
-   "supporting_pmids": ["<pmid>", "..."],
-   "merged_from": ["<provisional task text merged in>", "..."],
-   "benchmarkable_as": "<how you would test it: vignette, multi-turn, agentic, multimodal>"}]}
-"""
+    prop_by_id = {p["proposal_id"]: p for p in proposals}
+    row_map = []
+    for t in tasks:
+        rws = [r for pid in t["proposal_ids"] for r in prop_by_id[pid]["row_ids"]]
+        t["n_proposals"] = len(t["proposal_ids"])
+        t["n_rows"] = len(rws)
+        t["pmids"] = sorted({by_id[r]["pmid"] for r in rws})
+        t["n_papers"] = len(t["pmids"])
+        for pid in t["proposal_ids"]:
+            for r in prop_by_id[pid]["row_ids"]:
+                row_map.append({"row_id": r, "pmid": by_id[r]["pmid"],
+                                "proposal_id": pid, "task_id": t["task_id"]})
+    return proposals, tasks, row_map, cost
 
-def batches(items, n):
-    for i in range(0, len(items), n):
-        yield items[i:i+n]
+
+def write_outputs(proposals, tasks, row_map, proposals_path, tasks_path, map_path):
+    write_csv(proposals_path,
+              [{**p, "row_ids": "; ".join(p["row_ids"])} for p in proposals],
+              ["proposal_id", "batch", "name", "definition", "row_ids",
+               "invalid_citations_dropped"])
+    write_csv(tasks_path,
+              [{**t, "proposal_ids": "; ".join(t["proposal_ids"]), "pmids": "; ".join(t["pmids"])}
+               for t in sorted(tasks, key=lambda t: -t["n_papers"])],
+              ["task_id", "name", "definition", "n_papers", "n_rows", "n_proposals",
+               "proposal_ids", "pmids", "origin"])
+    write_csv(map_path, row_map, ["row_id", "pmid", "proposal_id", "task_id"])
+
+
+def main():
+    tag = sys.argv[sys.argv.index("--tag") + 1] if "--tag" in sys.argv else ""
+    rows = read_csv(need(ROWS))
+    if "--pmids" in sys.argv:
+        keep = {r["pmid"] for r in read_csv(need(sys.argv[sys.argv.index("--pmids") + 1]))}
+        rows = [r for r in rows if r["pmid"] in keep]
+    if not rows:
+        sys.exit("ERROR: no rows to group.")
+    print(f"  grouping {len(rows)} rows from {len({r['pmid'] for r in rows})} papers "
+          f"in batches of {BATCH_SIZE}; model {MODEL}")
+    proposals, tasks, row_map, cost = group(rows, tag=f"{tag}-" if tag else "")
+    d = lambda name: os.path.join(DATA, name)
+    if tag:
+        write_outputs(proposals, tasks, row_map, d(f"13_{tag}_round1_proposals.csv"),
+                      d(f"13_{tag}_candidate_tasks.csv"), d(f"13_{tag}_row_task_map.csv"))
+    else:
+        write_outputs(proposals, tasks, row_map, d("09_round1_proposals.csv"),
+                      d("10_candidate_tasks.csv"), d("10_row_task_map.csv"))
+
+    prov = provenance(os.path.abspath(__file__), extra_files=[P1, P2])
+    prov.update({"model": MODEL, "seed": SEED, "batch_size": BATCH_SIZE, "tag": tag,
+                 "rows": len(rows), "proposals": len(proposals), "tasks": len(tasks),
+                 "unassigned_in_round2": sum(t["origin"] != "round2" for t in tasks),
+                 "cost_usd": round(cost, 4)})
+    write_json(os.path.join(DATA, f"13_{tag}_grouping_manifest.json" if tag
+                            else "10_grouping_manifest.json"), prov)
+    print(f"\n  round 1: {len(proposals)} proposals; round 2: {len(tasks)} candidate tasks "
+          f"({prov['unassigned_in_round2']} left unassigned by the model, kept as their own)")
+    print(f"  grouping spend recorded by OpenRouter: ${cost:.2f}")
+    for t in sorted(tasks, key=lambda t: -t["n_papers"])[:40]:
+        print(f"    {t['task_id']:>8}  {t['n_papers']:>3} papers  {t['name']}")
+    if not tag:
+        print("\nNext: python3 scripts/15_grouping_check.py build")
+
 
 if __name__ == "__main__":
-    items = read_csv(need(os.path.join(DATA, "06_constructs_raw.csv")))
-    situations = [r for r in items if r.get("kind") == "situation"
-                  and r.get("quote_verified") == "yes"]
-    demands_by_pmid = {}
-    for r in items:
-        if r.get("kind") == "demand" and r.get("quote_verified") == "yes":
-            demands_by_pmid.setdefault(r["pmid"], []).append(r)
-    if not situations:
-        sys.exit("No verified high-risk situations in data/06_constructs_raw.csv. Run step 6 first.")
-    print(f"  {len(situations)} verified situations across {len(set(r['pmid'] for r in situations))} papers")
-
-    # ---- PASS 1: open coding, arbitrary batches, no categories assumed ----
-    provisional, pmids_seen = [], set()
-    for bi, batch in enumerate(batches(situations, BATCH_SIZE), 1):
-        pmids_in_batch = {r["pmid"] for r in batch}
-        pmids_seen |= pmids_in_batch
-        blob = "\n".join(
-            f"[pmid {r['pmid']}] situation: {r.get('situation','')} :: "
-            f"why hard: {(r.get('why_cognitively_hard') or '')[:250]} :: "
-            f"risk: {(r.get('risk_evidence') or '')[:200]} :: "
-            f"paired demands on this paper: "
-            + "; ".join(d.get("label","") for d in demands_by_pmid.get(r["pmid"], [])[:3])
-            for r in batch)
-        print(f"  batch {bi}: {len(batch)} situations from {len(pmids_in_batch)} papers")
-        for model, fn in (("gpt", api.ask_openai), ("claude", api.ask_anthropic)):
-            saved = api.PROMPT; api.PROMPT = OPEN_CODING_PROMPT
-            try:
-                res = fn(f"BATCH {bi}\n\n{blob}")
-                for t in res.get("tasks", []):
-                    cited = [p for p in (t.get("supporting_pmids") or [])]
-                    bad = [p for p in cited if p not in pmids_in_batch]
-                    provisional.append({"batch":bi,"model":model,
-                        "task":t.get("task",""),
-                        "cognitive_demand":t.get("cognitive_demand",""),
-                        "clinical_situation":t.get("clinical_situation",""),
-                        "setting":t.get("setting",""),
-                        "why_high_risk":t.get("why_high_risk",""),
-                        "risk_evidence_quote":t.get("risk_evidence_quote",""),
-                        "supporting_pmids":"; ".join(cited),
-                        "citations_check":"ok" if not bad else f"NOT IN BATCH: {bad}"})
-            except Exception as e:
-                print(f"    {model} failed on batch {bi}: {e}")
-            finally:
-                api.PROMPT = saved
-            time.sleep(0.4)
-
-    write_csv(os.path.join(DATA,"08a_open_coding.csv"), provisional,
-        ["batch","model","task","cognitive_demand","clinical_situation","setting",
-         "why_high_risk","risk_evidence_quote","supporting_pmids","citations_check"])
-    print(f"\n  {len(provisional)} provisional tasks from open coding across "
-          f"{len(set(p['batch'] for p in provisional))} batches")
-
-    # ---- PASS 2: merge across the whole corpus at once ----
-    all_pmids = pmids_seen
-    blob = "\n".join(
-        f"- \"{p['task']}\" (demand: {p['cognitive_demand']} | situation: "
-        f"{p['clinical_situation']} | risk: {p['risk_evidence_quote'][:150]} | "
-        f"pmids: {p['supporting_pmids']})"
-        for p in provisional if p["citations_check"] == "ok")
-    out = []
-    for model, fn in (("gpt", api.ask_openai), ("claude", api.ask_anthropic)):
-        saved = api.PROMPT; api.PROMPT = MERGE_PROMPT
-        try:
-            res = fn(f"PROVISIONAL TASKS FROM ALL BATCHES:\n\n{blob}")
-            for t in res.get("tasks", []):
-                cited = [p for p in (t.get("supporting_pmids") or [])]
-                bad = [p for p in cited if p not in all_pmids]
-                out.append({"model":model,
-                    "task":t.get("task",""),
-                    "cognitive_demand":t.get("cognitive_demand",""),
-                    "clinical_situation":t.get("clinical_situation",""),
-                    "setting":t.get("setting",""),
-                    "why_high_risk":t.get("why_high_risk",""),
-                    "risk_evidence_quote":t.get("risk_evidence_quote",""),
-                    "supporting_pmids":"; ".join(cited),
-                    "merged_from":" | ".join(t.get("merged_from") or []),
-                    "benchmarkable_as":t.get("benchmarkable_as",""),
-                    "citations_check":"ok" if not bad else f"NOT IN CORPUS: {bad}",
-                    "human_keep":"", "human_merge_with":"", "human_notes":""})
-        except Exception as e:
-            print(f"    {model} merge failed: {e}")
-        finally:
-            api.PROMPT = saved
-
-    write_csv(os.path.join(DATA,"08_candidate_tasks.csv"), out,
-        ["model","task","cognitive_demand","clinical_situation","setting",
-         "why_high_risk","risk_evidence_quote","supporting_pmids","merged_from",
-         "benchmarkable_as","citations_check","human_keep","human_merge_with","human_notes"])
-    nofig = sum(1 for r in out if not r["risk_evidence_quote"].strip())
-    print(f"\n  {len(out)} merged candidate tasks (both models combined)")
-    print(f"  {nofig} have no risk evidence quote - those cannot be called high-risk yet")
-    print("\n  Now the human step: open data/08_candidate_tasks.csv. GPT and Claude each")
-    print("  produced their own merge, so expect overlap between the two. Mark human_keep")
-    print("  = yes on the wording you want, use human_merge_with to collapse the two models'")
-    print("  versions of the same task, and see how close the result lands to 30-40 before")
-    print("  forcing it there.")
+    main()

@@ -10,8 +10,10 @@ kept for the methods write-up. Do not follow them and do not "fix" code to match
 them. If they disagree with v7, v7 wins except for the five explicitly approved
 amendments in the dated decision record.
 
-Andrew is working on **steps 1 to 3 only**. Do not build, refactor, or propose
-work on steps 4 onward unless asked.
+Andrew is working on **steps 1 to 3 only**. Steps 4–13 were rebuilt against
+protocol v7 on 22 Sept 2026 at the PI's request; **`docs/PIPELINE.md` is the
+run guide** for all thirteen steps, with the step-to-script map and the
+decisions the team still has to make.
 
 ## What the project is for
 
@@ -148,6 +150,13 @@ that errored.
 - Prior pilot: Austin/Anastasia kappa 0.875 on n=20 (one disagreement, fragile).
   Both AI screeners were far more inclusive than either human; AI sensitivity
   0.5–0.83. Over-inclusion is by design; the low sensitivity is not resolved.
+
+## Budget
+
+Whole-pipeline model spend must stay under **$50** (PI, 22 Sept 2026). Scripts
+from step 7 on check spend on the OpenRouter key before every batch and stop
+at `PACT_BUDGET_USD` (default 50). Hidden model reasoning is switched off in
+`common.openrouter_chat`; see `docs/PIPELINE.md` for why.
 
 ## Not in this repo yet
 
