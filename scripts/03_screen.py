@@ -55,7 +55,7 @@ MODEL_B = os.environ.get("PACT_MODEL_B", "anthropic/claude-3.5-haiku")
 PROMPT_FILE = os.path.join(PROMPTS, "screen_prompt_v7.txt")
 IN_FILE = os.path.join(DATA, "11_sample_500.csv")
 OUT_FILE = os.path.join(DATA, "03_screening.csv")
-DECISION_ID = "2026-08-28-method-amendment"
+DECISION_ID = "2026-09-22-search-tightening"
 
 FIELDS = [
     "record_no", "batch_100", "block_50", "pmid", "source_setting", "year",
@@ -78,8 +78,8 @@ def verify_sample_provenance():
     if (manifest.get("decision_id") != DECISION_ID
             or manifest.get("overlap_rule") != "drop"):
         sys.exit(
-            "ERROR: the saved 500-paper sample predates the 2026-08-28 method "
-            "amendment.\n"
+            "ERROR: the saved 500-paper sample predates the current method "
+            "amendment (" + DECISION_ID + ").\n"
             "  Re-run steps 1 and 2 before screening. See data/README.md."
         )
 

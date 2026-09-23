@@ -39,6 +39,8 @@ WORKED CONTRASTS
 OUT OF SCOPE ON POPULATION OR SETTING
 
   - paediatrics only
+  - dentistry or dental practice (in dental papers "general practitioner"
+    means a general dentist, not a primary care physician)
   - ICU only, or inpatient wards only, or a single non-EM non-primary-care
     specialty only
   - prehospital or ambulance only

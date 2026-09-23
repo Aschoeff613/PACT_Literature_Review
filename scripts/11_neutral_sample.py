@@ -49,7 +49,7 @@ N_PER_SETTING = 250
 OVERSAMPLE = 1.30          # 325 drawn per setting to survive the abstract filter
 OVERLAP_RULE = "drop"      # approved 2026-08-28; do not change without amendment
 MIN_ABSTRACT_CHARS = 100
-DECISION_ID = "2026-08-28-method-amendment"
+DECISION_ID = "2026-09-22-search-tightening"
 # ---------------------------------------------------------------------------
 
 SETTING_FILES = {
@@ -70,8 +70,8 @@ def main():
     if (search_manifest.get("decision_id") != DECISION_ID
             or search_manifest.get("counts_only")):
         sys.exit(
-            "ERROR: the saved PubMed pools predate the 2026-08-28 method "
-            "amendment (or came from a counts-only run).\n"
+            "ERROR: the saved PubMed pools predate the current method "
+            "amendment (" + DECISION_ID + ") (or came from a counts-only run).\n"
             "  Re-run: python3 scripts/01_search.py --per-term"
         )
 

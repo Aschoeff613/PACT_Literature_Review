@@ -46,7 +46,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import (DATA, esearch_all_pmids, esearch_count, provenance,
                     require_email, write_csv, write_json)
 
-DECISION_ID = "2026-08-28-method-amendment"
+DECISION_ID = "2026-09-22-search-tightening"
 
 # ---------------------------------------------------------------------------
 # Filters applied inside the query
@@ -55,20 +55,30 @@ DECISION_ID = "2026-08-28-method-amendment"
 # education-only, case reports, editorials, patient-thinking papers.
 #
 # Only some of those belong in a PubMed query. Publication type, language and
-# date are indexed reliably, so they go here. Population and setting exclusions
-# do NOT go here: a NOT clause on "Child"[MeSH] or "Intensive Care Units"[MeSH]
-# silently drops papers that are squarely in scope but mention children or the
-# ICU once. Step 3 screening handles those, and its instruction is to include
-# when uncertain. Putting them in the query would be a silent, unrecoverable
-# exclusion with no reviewer able to see it.
+# date are indexed reliably, so they go here. Most population and setting
+# exclusions do NOT go here: a NOT clause on "Child"[MeSH] or "Intensive Care
+# Units"[MeSH] silently drops papers that are squarely in scope but mention
+# children or the ICU once. Step 3 screening handles those, and its
+# instruction is to include when uncertain.
 #
-# Consequence to accept: the corpus contains out-of-scope records and the
-# screen has to remove them. That is the right place for the error to live.
+# 2026-09-22 exception (docs/DECISIONS_2026-09-22.md): children-only and
+# dental papers ARE removed here, because the 20-paper screening trial showed
+# they were taking sample slots that screening then discarded. The paediatric
+# clause is guarded: it drops a record only when it is indexed Infant, Child or
+# Adolescent AND NOT Adult, so mixed-age studies (e.g. "patients aged 16+")
+# survive. Records not yet MeSH-indexed carry no age tags and pass through to
+# screening, which still excludes paediatric-only work.
+#
+# Consequence to accept: the corpus still contains out-of-scope records and
+# the screen has to remove them. That is the right place for the error to live.
 FILTERS = (
     '("2005"[dp] : "2026"[dp]) '
     'AND English[la] '
     'NOT ("Case Reports"[pt] OR "Editorial"[pt] OR "Comment"[pt] '
-    'OR "Letter"[pt] OR "News"[pt] OR "Published Erratum"[pt])'
+    'OR "Letter"[pt] OR "News"[pt] OR "Published Erratum"[pt]) '
+    'NOT (("Infant"[MeSH] OR "Child"[MeSH] OR "Adolescent"[MeSH]) '
+    'NOT "Adult"[MeSH]) '
+    'NOT ("Dentistry"[MeSH] OR "Dentists"[MeSH])'
 )
 
 SETTINGS = {
@@ -84,7 +94,9 @@ SETTINGS = {
         '"acute medical unit"[tiab]',
     ],
     "primary_care": [
-        '"Primary Health Care"[MeSH]',
+        # [majr] since 2026-09-22: as a non-major tag it is attached to papers
+        # that merely mention primary care (oncology, ICU, rehab, fertility).
+        '"Primary Health Care"[majr]',
         '"General Practice"[MeSH]',
         '"General Practitioners"[MeSH]',
         '"Physicians, Primary Care"[MeSH]',
@@ -299,6 +311,11 @@ def main():
             '"Referral and Consultation"[MeSH] restricted to [majr]',
             'bare "referral"[tiab] dropped',
             'bare "consultation"[tiab] dropped',
+        ],
+        "approved_search_changes_2026_09_22": [
+            'children-only records removed: (Infant OR Child OR Adolescent)[MeSH] NOT Adult[MeSH]',
+            'dental records removed: Dentistry[MeSH] OR Dentists[MeSH]',
+            '"Primary Health Care"[MeSH] restricted to [majr]',
         ],
         "settings": {k: len(v) for k, v in SETTINGS.items()},
         "term_group_sizes": {k: len(v) for k, v in TERM_GROUPS.items()},

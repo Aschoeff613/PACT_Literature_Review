@@ -4,7 +4,7 @@
 
 **`docs/PACT_LitReview_Plan.pdf` (protocol v7, 18 Aug 2026) is the baseline
 authoritative document.** For steps 1–3 it is amended by the approved decisions
-in **`docs/DECISIONS_2026-08-28.md`**. `docs/README_superseded.md` and
+in **`docs/DECISIONS_2026-08-28.md`** and **`docs/DECISIONS_2026-09-22.md`**. `docs/README_superseded.md` and
 `docs/protocol_superceded.md` are earlier generations of the same project,
 kept for the methods write-up. Do not follow them and do not "fix" code to match
 them. If they disagree with v7, v7 wins except for the five explicitly approved
@@ -93,10 +93,12 @@ that errored.
 - **Provenance.** Every script writes a `*_manifest.json` with git commit, script
   and prompt SHAs, and timestamp. v7 requires this at every step. Don't remove it,
   and warn if the repo is dirty before a real run.
-- **No silent exclusions.** Population and setting exclusions (paediatrics, ICU,
-  nursing-only) stay out of the PubMed query and are handled at screening, where a
-  human can see them. A `NOT "Child"[MeSH]` clause deletes in-scope papers
-  invisibly. This is deliberate; don't "optimise" it away.
+- **No silent exclusions.** Population and setting exclusions (ICU,
+  nursing-only, other specialties) stay out of the PubMed query and are handled at
+  screening, where a human can see them. A bare `NOT "Child"[MeSH]` clause deletes
+  in-scope mixed-age papers invisibly. The two exceptions, approved 22 Sept 2026,
+  are children-only records (guarded with `NOT "Adult"[MeSH]` so mixed-age studies
+  survive) and dental records. Don't widen these without a new dated decision.
 - **One screening criterion.** `prompts/screen_prompt_v7.txt` (AI) and
   `validation/Lit_Review_Web_Interface.html` (humans) must state the same test. If
   one changes, the other changes. Step 4 measures the AI against the humans, so
@@ -122,6 +124,16 @@ that errored.
   content; the tradeoff is recorded with counts in `docs/DECISIONS_2026-08-28.md`.
 - The step 1 and 2 outputs were regenerated after these decisions on 28 August
   2026 and are current for screening. See `data/README.md` for counts and status.
+
+## Approved decisions, 22 September 2026
+
+- Remove children-only records from the search, guarded so mixed-age studies stay.
+- Remove dental records from the search; dentistry added to the prompt and the
+  human interface as out of scope.
+- Restrict `"Primary Health Care"[MeSH]` to `[majr]`.
+- Evidence: a 20-paper screening trial found 55% of papers were in neither
+  setting (64% of the primary-care arm). Details and measured effect in
+  `docs/DECISIONS_2026-09-22.md`. Decision id `2026-09-22-search-tightening`.
 
 ## Known open issues
 
