@@ -1,36 +1,57 @@
 """
-STEP 5 - Find and download full text, free and legally, wherever possible.
+STEP 7 (part) - Fetch full text for the papers extraction flagged.
 
-Checks two places for every paper you decided to include:
-  1. PubMed Central  (free full text hosted by NIH)
-  2. Unpaywall       (tells you if a legal free copy exists anywhere else)
+Protocol v7 pulls the full paper only when the abstract is too thin, when the
+paper looks like it holds something the abstract doesn't show, or when the
+supporting sentence can't be confirmed. 06_extract.py records those flags;
+this script fetches full text for exactly those papers, free and legally:
 
-Downloads what it can as plain text into data/fulltext/ and then gives you a
-short worklist of the ones a human has to fetch through the library.
+  1. PubMed Central open-access text, fetched automatically into
+     data/fulltext/<pmid>.txt (body only; reference list dropped).
+  2. Otherwise, a worklist line: a free copy's link from Unpaywall if one
+     exists, else "library". A person saves the text as data/fulltext/<pmid>.txt.
 
-Run it with:   python3 scripts/05_fulltext.py
+Then: python3 scripts/06_extract.py --fulltext
+
+The count of full texts pulled is reported, as v7's methods section requires.
 """
-import argparse, os, re, sys, json, time, urllib.parse
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from common import fetch, read_csv, write_csv, need, DATA, EMAIL, EUTILS
+import json
+import os
+import re
+import sys
+import time
+import urllib.parse
+import urllib.request
 
-INPUT = os.path.join(DATA, "04_includes.csv")     # made in step 4
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import (DATA, EMAIL, eutils, need, provenance, read_csv,
+                    require_email, write_csv, write_json)
+
 FTDIR = os.path.join(DATA, "fulltext")
+PAPERS = os.path.join(DATA, "07_extraction_papers.csv")
+SAMPLE = os.path.join(DATA, "11_sample_500.csv")
+WORKLIST = os.path.join(DATA, "07_fulltext_worklist.csv")
+MIN_CHARS = 3000
+
 
 def pmc_text(pmcid):
-    """PMC full text. NOTE: use NCBI efetch. The europePMC fullTextXML endpoint
-    404s on many records, which will waste your afternoon if you trust it."""
-    num = pmcid.replace("PMC","")
-    q = urllib.parse.urlencode({"db":"pmc","id":num,"rettype":"xml","email":EMAIL})
-    xml = fetch(EUTILS+"efetch.fcgi?"+q).decode("utf-8","ignore")
+    """Body text of a PMC article, without the reference list."""
+    xml = eutils("efetch.fcgi", {"db": "pmc", "id": pmcid.replace("PMC", ""),
+                                 "retmode": "xml"}).decode("utf-8", "ignore")
     body = re.search(r"<body>(.*?)</body>", xml, re.S)
-    raw = body.group(1) if body else xml
-    txt = re.sub(r"<[^>]+>", " ", raw)
-    return re.sub(r"\s+", " ", txt).strip()
+    if not body:
+        return ""
+    raw = re.sub(r"<ref-list>.*?</ref-list>", " ", body.group(1), flags=re.S)
+    raw = re.sub(r"</(p|title|sec)>", "\n", raw)
+    import html
+    txt = html.unescape(re.sub(r"<[^>]+>", " ", raw))
+    return re.sub(r"[ \t]+", " ", re.sub(r"\n\s*\n+", "\n\n", txt)).strip()
 
-def unpaywall(doi):
+
+def unpaywall_link(doi):
     try:
-        j = json.loads(fetch(f"https://api.unpaywall.org/v2/{urllib.parse.quote(doi)}?email={EMAIL}", tries=2))
+        url = f"https://api.unpaywall.org/v2/{urllib.parse.quote(doi)}?email={EMAIL}"
+        j = json.loads(urllib.request.urlopen(url, timeout=30).read())
         if j.get("is_oa"):
             loc = j.get("best_oa_location") or {}
             return loc.get("url_for_pdf") or loc.get("url") or ""
@@ -38,49 +59,51 @@ def unpaywall(doi):
         pass
     return ""
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Retrieve legally available full text and create a manual worklist.")
-    parser.add_argument("--input", default=INPUT, help="candidate includes CSV")
-    parser.add_argument("--fulltext-dir", default=FTDIR, help="directory for retrieved PMC text")
-    parser.add_argument("--worklist-output", default=os.path.join(DATA,"05_manual_worklist.csv"),
-                        help="manual retrieval worklist CSV")
-    parser.add_argument("--start", type=int, default=1, help="1-based first input row")
-    parser.add_argument("--limit", type=int, default=None, help="optional number of input rows to process")
-    args = parser.parse_args()
-    rows = read_csv(need(args.input))
-    rows = rows[args.start - 1:]
-    if args.limit:
-        rows = rows[:args.limit]
-    os.makedirs(args.fulltext_dir, exist_ok=True)
-    prior = read_csv(args.worklist_output) if os.path.exists(args.worklist_output) else []
-    worklist = {r["pmid"]: r for r in prior}
-    got = 0
-    for i, r in enumerate(rows, 1):
-        pmid, pmc, doi = r["pmid"], r.get("pmc",""), r.get("doi","")
-        out = os.path.join(args.fulltext_dir, f"{pmid}.txt")
-        if os.path.exists(out) and os.path.getsize(out) > 3000:
-            got += 1; continue
-        text = ""
-        if pmc:
-            try:
-                t = pmc_text(pmc)
-                if len(t) > 3000: text = t
-            except Exception: pass
-        if text:
-            open(out,"w",encoding="utf-8").write(text)
+
+def main():
+    require_email()
+    sample = {r["pmid"]: r for r in read_csv(need(SAMPLE))}
+    flagged = [r["pmid"] for r in read_csv(need(PAPERS))
+               if r["source"] == "abstract" and r.get("full_text_warranted") == "yes"]
+    os.makedirs(FTDIR, exist_ok=True)
+    worklist, got, fetched_now = [], 0, 0
+    for i, pmid in enumerate(flagged, 1):
+        out = os.path.join(FTDIR, f"{pmid}.txt")
+        if os.path.exists(out) and os.path.getsize(out) > MIN_CHARS:
             got += 1
-            print(f"  [{i}/{len(rows)}] {pmid}: {len(text):,} chars from PMC")
+            continue
+        rec = sample[pmid]
+        text = ""
+        if rec.get("pmc"):
+            try:
+                text = pmc_text(rec["pmc"])
+            except Exception as e:
+                print(f"  {pmid}: PMC fetch failed ({type(e).__name__})")
+        if len(text) > MIN_CHARS:
+            with open(out, "w", encoding="utf-8") as f:
+                f.write(text)
+            got += 1
+            fetched_now += 1
+            print(f"  [{i}/{len(flagged)}] {pmid}: {len(text):,} chars from PMC")
         else:
-            link = unpaywall(doi) if doi else ""
-            worklist[pmid] = {"pmid":pmid,"title":r["title"],"year":r.get("year",""),
-                "journal":r.get("journal",""),"doi":doi,
-                "free_pdf_link": link,
-                "action": "download this free PDF" if link else "get via library proxy",
-                "save_as": os.path.join(args.fulltext_dir, f"{pmid}.txt")}
-            print(f"  [{i}/{len(rows)}] {pmid}: needs manual retrieval" + (" (free link found)" if link else ""))
+            link = unpaywall_link(rec["doi"]) if rec.get("doi") else ""
+            worklist.append({"pmid": pmid, "title": rec["title"], "year": rec["year"],
+                             "journal": rec["journal"], "doi": rec.get("doi", ""),
+                             "free_copy_link": link,
+                             "action": "save the free copy as text" if link else "get via library",
+                             "save_as": f"data/fulltext/{pmid}.txt"})
+            print(f"  [{i}/{len(flagged)}] {pmid}: manual" + (" (free link found)" if link else ""))
         time.sleep(0.34)
-    write_csv(args.worklist_output, list(worklist.values()),
-        ["pmid","title","year","journal","doi","free_pdf_link","action","save_as"])
-    print(f"\n  automatic: {got}    manual: {len(worklist)}")
-    print("  Open data/05_manual_worklist.csv. Work down it, save each as plain text")
-    print("  in data/fulltext/<pmid>.txt, then run step 6.")
+
+    write_csv(WORKLIST, worklist,
+              ["pmid", "title", "year", "journal", "doi", "free_copy_link", "action", "save_as"])
+    print(f"\n  flagged: {len(flagged)}   full text on disk: {got} ({fetched_now} fetched now)"
+          f"   manual worklist: {len(worklist)}")
+    prov = provenance(os.path.abspath(__file__))
+    prov.update({"flagged": len(flagged), "fulltext_on_disk": got, "manual": len(worklist)})
+    write_json(os.path.join(DATA, "07_fulltext_manifest.json"), prov)
+    print("\nNext: python3 scripts/06_extract.py --fulltext")
+
+
+if __name__ == "__main__":
+    main()

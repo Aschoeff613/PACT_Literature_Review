@@ -1,233 +1,163 @@
 #!/usr/bin/env python3
-"""Merge four 150-record reviewer exports into one 300-paper consensus file.
-
-Recommended assignment:
-  reviewers 1 and 2 -> pact_validation_review_001-150.html
-  reviewers 3 and 4 -> pact_validation_review_151-300.html
-
-Each paper therefore receives exactly two independent decisions. Agreements become
-the consensus decision; disagreements are written to a short adjudication file.
-
-Example:
-  python3 scripts/12_merge_human_reviews.py \
-    reviewer_1.csv reviewer_2.csv reviewer_3.csv reviewer_4.csv
 """
+STEP 5 - Sort out the disagreements.
 
+Protocol v7, step 5: where both reviewers agree, that stands. Where they
+disagree, a third person decides. Report agreement for each of the six pairs.
+
+Takes the CSVs the six reviewers exported from their step 4 pages (in any
+order, any filenames: each row carries its reviewer ID).
+
+First run:
+    python3 scripts/12_merge_human_reviews.py step4_review_R*.csv
+  -> data/05_agreement_by_pair.csv   agreement and kappa for each pair
+  -> data/05_adjudication.csv        every disagreement, for the third person
+  -> data/05_human_consensus.csv     final decisions so far
+
+The third person fills the adjudicated_decision column of 05_adjudication.csv
+(include or exclude), and their name in adjudicator. Then run the same command
+again: filled decisions are kept and folded into the consensus file. Nothing
+already adjudicated is overwritten.
+"""
 import argparse
 import math
 import os
 import sys
 from collections import defaultdict
-from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from common import DATA, need, read_csv, write_csv
+from common import DATA, need, provenance, read_csv, write_csv, write_json
+
+VALID = {"include", "exclude"}
 
 
-VALID_DECISIONS = {"include", "exclude"}
+def clean(v):
+    v = (v or "").strip().lower()
+    return v if v in VALID else ""
 
 
-def clean_decision(value):
-    value = (value or "").strip().lower()
-    return value if value in VALID_DECISIONS else ""
-
-
-def kappa(rows):
-    """Cohen's kappa for rows containing decision_a and decision_b."""
-    if not rows:
+def kappa(pairs):
+    """Cohen's kappa over (decision_1, decision_2) pairs."""
+    n = len(pairs)
+    if not n:
         return float("nan")
-    n = len(rows)
-    agree = sum(r["decision_a"] == r["decision_b"] for r in rows)
-    a_include = sum(r["decision_a"] == "include" for r in rows) / n
-    b_include = sum(r["decision_b"] == "include" for r in rows) / n
-    expected = a_include * b_include + (1 - a_include) * (1 - b_include)
-    return (agree / n - expected) / (1 - expected) if expected < 1 else float("nan")
+    po = sum(a == b for a, b in pairs) / n
+    p1 = sum(a == "include" for a, _ in pairs) / n
+    p2 = sum(b == "include" for _, b in pairs) / n
+    pe = p1 * p2 + (1 - p1) * (1 - p2)
+    return (po - pe) / (1 - pe) if pe < 1 else float("nan")
 
 
-def fmt_rate(value):
-    return "" if math.isnan(value) else f"{value:.3f}"
+def fmt(x):
+    return "" if isinstance(x, float) and math.isnan(x) else f"{x:.3f}"
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Merge four independent reviewer exports and identify disagreements."
-    )
-    parser.add_argument("reviews", nargs=4, help="four CSV files exported by the browser reviewers")
-    parser.add_argument("--names", nargs=4, metavar=("R1", "R2", "R3", "R4"),
-                        help="optional reviewer names; defaults to the four filenames")
-    parser.add_argument("--master", default=os.path.join(DATA, "11_neutral_validation_sample.csv"),
-                        help="original 300-record validation sample")
-    parser.add_argument("--output", default=os.path.join(DATA, "12_human_consensus.csv"),
-                        help="merged 300-record output")
-    parser.add_argument("--disagreements", default=os.path.join(DATA, "12_disagreements.csv"),
-                        help="papers that require adjudication")
-    parser.add_argument("--adjudications", default=None,
-                        help="optional edited disagreement CSV to merge on a rerun")
-    parser.add_argument("--summary", default=os.path.join(DATA, "12_agreement_summary.csv"),
-                        help="agreement summary by reviewer pair")
-    parser.add_argument("--expected-per-reviewer", type=int, default=150,
-                        help="required completed decisions per reviewer (default: 150; use 0 to disable)")
-    parser.add_argument("--expected-ratings-per-paper", type=int, default=2,
-                        help="required ratings per paper (default: 2)")
-    parser.add_argument("--allow-incomplete", action="store_true",
-                        help="write partial outputs instead of stopping for missing decisions")
-    args = parser.parse_args()
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
+    ap.add_argument("reviews", nargs="+", help="reviewer CSV exports from step 4")
+    ap.add_argument("--master", default=os.path.join(DATA, "04_validation_master.csv"))
+    ap.add_argument("--adjudication", default=os.path.join(DATA, "05_adjudication.csv"))
+    ap.add_argument("--output", default=os.path.join(DATA, "05_human_consensus.csv"))
+    args = ap.parse_args()
 
     master = read_csv(need(args.master))
-    master_by_pmid = {str(r.get("pmid", "")).strip(): r for r in master}
-    if len(master) != len(master_by_pmid):
-        sys.exit("ERROR: the master validation sample contains duplicate or blank PMIDs.")
+    by_pmid = {r["pmid"]: r for r in master}
 
-    names = args.names or [Path(path).stem for path in args.reviews]
-    if len(set(names)) != 4:
-        sys.exit("ERROR: reviewer names must be unique.")
-
-    ratings = defaultdict(list)
-    reviewer_counts = {}
-    problems = []
-    for reviewer, path in zip(names, args.reviews):
+    decisions = defaultdict(dict)    # pmid -> reviewer -> (decision, notes)
+    for path in args.reviews:
         rows = read_csv(need(path))
-        seen = set()
-        completed = 0
-        for row in rows:
-            pmid = str(row.get("pmid", "")).strip()
-            if not pmid or pmid not in master_by_pmid:
-                problems.append(f"{reviewer}: unknown or blank PMID {pmid!r}")
-                continue
-            if pmid in seen:
-                problems.append(f"{reviewer}: duplicate PMID {pmid}")
-                continue
-            seen.add(pmid)
-            decision = clean_decision(row.get("human_decision"))
-            if not decision:
-                if not args.allow_incomplete:
-                    problems.append(f"{reviewer}: PMID {pmid} has no include/exclude decision")
-                continue
-            completed += 1
-            ratings[pmid].append({
-                "reviewer": reviewer,
-                "decision": decision,
-                "notes": (row.get("human_notes") or "").strip(),
-            })
-        reviewer_counts[reviewer] = completed
-        if args.expected_per_reviewer and completed != args.expected_per_reviewer:
-            problems.append(
-                f"{reviewer}: expected {args.expected_per_reviewer} completed decisions, found {completed}"
-            )
+        ids = {(r.get("reviewer") or "").strip() for r in rows} - {""}
+        if len(ids) != 1:
+            sys.exit(f"ERROR: {path} should hold one reviewer's export; found {sorted(ids) or 'none'}.")
+        rv = ids.pop()
+        if rv == "WARMUP":
+            sys.exit(f"ERROR: {path} is a warm-up export. Warm-up papers do not count.")
+        stray = [r["pmid"] for r in rows if r["pmid"] not in by_pmid]
+        if stray:
+            sys.exit(f"ERROR: {path} ({rv}) holds {len(stray)} PMIDs not in the master file.")
+        for r in rows:
+            if rv in decisions[r["pmid"]]:
+                sys.exit(f"ERROR: two exports for reviewer {rv}. Pass each reviewer once.")
+            decisions[r["pmid"]][rv] = (clean(r.get("human_decision")),
+                                        (r.get("human_notes") or "").strip())
 
-    for pmid in master_by_pmid:
-        count = len(ratings.get(pmid, []))
-        if count != args.expected_ratings_per_paper:
-            problems.append(
-                f"PMID {pmid}: expected {args.expected_ratings_per_paper} ratings, found {count}"
-            )
+    prior = {r["pmid"]: r for r in read_csv(args.adjudication)} if os.path.exists(args.adjudication) else {}
 
-    if problems and not args.allow_incomplete:
-        preview = "\n  ".join(problems[:20])
-        more = f"\n  ...and {len(problems) - 20} more" if len(problems) > 20 else ""
-        sys.exit(f"ERROR: reviewer files are not complete or correctly assigned:\n  {preview}{more}")
+    out, adjud, pair_rows = [], [], defaultdict(list)
+    missing = defaultdict(int)
+    for m in master:
+        r1, r2 = m["reviewer_1"], m["reviewer_2"]
+        d1, n1 = decisions[m["pmid"]].get(r1, ("", ""))
+        d2, n2 = decisions[m["pmid"]].get(r2, ("", ""))
+        if not d1:
+            missing[r1] += 1
+        if not d2:
+            missing[r2] += 1
+        row = dict(m)
+        row.update({"decision_1": d1, "notes_1": n1, "decision_2": d2, "notes_2": n2})
+        if d1 and d2:
+            pair_rows[(m["block"], r1, r2)].append((d1, d2))
+        if d1 and d2 and d1 == d2:
+            row.update({"human_final": d1, "basis": "agreed"})
+        elif d1 and d2:
+            p = prior.get(m["pmid"], {})
+            adj = clean(p.get("adjudicated_decision"))
+            row.update({"human_final": adj, "basis": "adjudicated" if adj else "PENDING adjudication"})
+            adjud.append({"val_no": m["val_no"], "block": m["block"], "pmid": m["pmid"],
+                          "title": m["title"], "reviewer_1": r1, "decision_1": d1, "notes_1": n1,
+                          "reviewer_2": r2, "decision_2": d2, "notes_2": n2,
+                          "adjudicated_decision": adj,
+                          "adjudicator": p.get("adjudicator", ""),
+                          "adjudication_notes": p.get("adjudication_notes", "")})
+        else:
+            row.update({"human_final": "", "basis": "PENDING review"})
+        out.append(row)
 
-    merged = []
-    pair_rows = defaultdict(list)
-    for order, base in enumerate(master, 1):
-        pmid = str(base.get("pmid", "")).strip()
-        paper_ratings = sorted(ratings.get(pmid, []), key=lambda r: r["reviewer"])
-        first = paper_ratings[0] if len(paper_ratings) >= 1 else {}
-        second = paper_ratings[1] if len(paper_ratings) >= 2 else {}
-        decision_a = first.get("decision", "")
-        decision_b = second.get("decision", "")
-        agreement = "yes" if decision_a and decision_a == decision_b else (
-            "no" if decision_a and decision_b else "incomplete"
-        )
-        consensus = decision_a if agreement == "yes" else ""
-        ai_combined = "include" if "include" in (
-            (base.get("_ai_gpt") or "").strip().lower(),
-            (base.get("_ai_claude") or "").strip().lower(),
-        ) else "exclude"
-        row = {
-            "review_order": order,
-            "pmid": pmid,
-            "year": base.get("year", ""),
-            "journal": base.get("journal", ""),
-            "title": base.get("title", ""),
-            "abstract": base.get("abstract", ""),
-            "source_setting": base.get("source_setting", ""),
-            "reviewer_a": first.get("reviewer", ""),
-            "decision_a": decision_a,
-            "notes_a": first.get("notes", ""),
-            "reviewer_b": second.get("reviewer", ""),
-            "decision_b": decision_b,
-            "notes_b": second.get("notes", ""),
-            "agreement": agreement,
-            "consensus_decision": consensus,
-            "adjudicated_decision": "",
-            "adjudication_notes": "",
-            "_ai_gpt": base.get("_ai_gpt", ""),
-            "_ai_claude": base.get("_ai_claude", ""),
-            "ai_combined_decision": ai_combined,
-        }
-        merged.append(row)
-        if decision_a and decision_b:
-            pair = f"{row['reviewer_a']} + {row['reviewer_b']}"
-            pair_rows[pair].append(row)
+    agreement = []
+    for (b, r1, r2), pairs in sorted(pair_rows.items(), key=lambda x: int(x[0][0])):
+        n = len(pairs)
+        agreement.append({"block": b, "pair": f"{r1}+{r2}", "n_both_decided": n,
+                          "agree_pct": fmt(100 * sum(a == c for a, c in pairs) / n),
+                          "kappa": fmt(kappa(pairs))})
+    allpairs = [p for ps in pair_rows.values() for p in ps]
+    if allpairs:
+        agreement.append({"block": "all", "pair": "all six pairs", "n_both_decided": len(allpairs),
+                          "agree_pct": fmt(100 * sum(a == c for a, c in allpairs) / len(allpairs)),
+                          "kappa": fmt(kappa(allpairs))})
 
-    if args.adjudications:
-        for adjudication in read_csv(need(args.adjudications)):
-            pmid = str(adjudication.get("pmid", "")).strip()
-            decision = clean_decision(adjudication.get("adjudicated_decision"))
-            if pmid in master_by_pmid and decision:
-                target = next(row for row in merged if row["pmid"] == pmid)
-                target["adjudicated_decision"] = decision
-                target["adjudication_notes"] = (adjudication.get("adjudication_notes") or "").strip()
+    write_csv(os.path.join(DATA, "05_agreement_by_pair.csv"), agreement,
+              ["block", "pair", "n_both_decided", "agree_pct", "kappa"])
+    write_csv(args.adjudication, adjud,
+              ["val_no", "block", "pmid", "title", "reviewer_1", "decision_1", "notes_1",
+               "reviewer_2", "decision_2", "notes_2", "adjudicated_decision",
+               "adjudicator", "adjudication_notes"])
+    write_csv(args.output, out,
+              list(master[0].keys()) + ["decision_1", "notes_1", "decision_2", "notes_2",
+                                        "human_final", "basis"])
 
-    fields = [
-        "review_order", "pmid", "year", "journal", "title", "abstract", "source_setting",
-        "reviewer_a", "decision_a", "notes_a", "reviewer_b", "decision_b", "notes_b",
-        "agreement", "consensus_decision", "adjudicated_decision", "adjudication_notes",
-        "_ai_gpt", "_ai_claude", "ai_combined_decision",
-    ]
-    write_csv(args.output, merged, fields)
-    disagreement_rows = [r for r in merged if r["agreement"] != "yes"]
-    write_csv(args.disagreements, disagreement_rows, fields)
+    print("\n  agreement by pair:")
+    for a in agreement:
+        print(f"    {a['pair']:15s} n={a['n_both_decided']:>3}  agree {a['agree_pct']:>7}%  kappa {a['kappa']}")
+    if missing:
+        print("\n  UNDECIDED papers by reviewer (reviewer has not finished):")
+        for rv, n in sorted(missing.items()):
+            print(f"    {rv}: {n}")
+    pend_adj = sum(1 for r in out if r["basis"] == "PENDING adjudication")
+    pend_rev = sum(1 for r in out if r["basis"] == "PENDING review")
+    done = len(out) - pend_adj - pend_rev
+    print(f"\n  final decisions: {done}/{len(out)}   awaiting adjudication: {pend_adj}   "
+          f"awaiting a reviewer: {pend_rev}")
 
-    summaries = []
-    all_complete = []
-    for pair, rows in sorted(pair_rows.items()):
-        all_complete.extend(rows)
-        agree = sum(r["agreement"] == "yes" for r in rows)
-        summaries.append({
-            "reviewer_pair": pair,
-            "papers": len(rows),
-            "agreements": agree,
-            "disagreements": len(rows) - agree,
-            "percent_agreement": f"{agree / len(rows):.3f}" if rows else "",
-            "cohen_kappa": fmt_rate(kappa(rows)),
-            "both_include": sum(r["decision_a"] == r["decision_b"] == "include" for r in rows),
-            "both_exclude": sum(r["decision_a"] == r["decision_b"] == "exclude" for r in rows),
-        })
-    if all_complete:
-        agree = sum(r["agreement"] == "yes" for r in all_complete)
-        summaries.append({
-            "reviewer_pair": "OVERALL",
-            "papers": len(all_complete),
-            "agreements": agree,
-            "disagreements": len(all_complete) - agree,
-            "percent_agreement": f"{agree / len(all_complete):.3f}",
-            "cohen_kappa": fmt_rate(kappa(all_complete)),
-            "both_include": sum(r["decision_a"] == r["decision_b"] == "include" for r in all_complete),
-            "both_exclude": sum(r["decision_a"] == r["decision_b"] == "exclude" for r in all_complete),
-        })
-    write_csv(args.summary, summaries, [
-        "reviewer_pair", "papers", "agreements", "disagreements", "percent_agreement",
-        "cohen_kappa", "both_include", "both_exclude",
-    ])
-
-    print("\n  reviewer totals:")
-    for reviewer in names:
-        print(f"    {reviewer}: {reviewer_counts.get(reviewer, 0)}")
-    print(f"  agreements: {sum(r['agreement'] == 'yes' for r in merged)}")
-    unresolved = sum(not clean_decision(r.get("adjudicated_decision")) for r in disagreement_rows)
-    print(f"  disagreements: {len(disagreement_rows)}; still requiring adjudication: {unresolved}")
+    prov = provenance(os.path.abspath(__file__))
+    prov.update({"reviewer_files": [os.path.basename(p) for p in args.reviews],
+                 "final": done, "pending_adjudication": pend_adj, "pending_review": pend_rev,
+                 "agreement": agreement})
+    write_json(os.path.join(DATA, "05_merge_manifest.json"), prov)
+    if pend_adj:
+        print(f"\n  Next: the third person fills adjudicated_decision in "
+              f"{os.path.relpath(args.adjudication, DATA)}, then re-run this command.")
+    elif not pend_rev:
+        print("\n  All 300 decided. Next: python3 scripts/07_metrics.py")
 
 
 if __name__ == "__main__":

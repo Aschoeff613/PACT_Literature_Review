@@ -24,7 +24,9 @@ NCBI_KEY = os.environ.get("NCBI_API_KEY", "")
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA = os.path.join(ROOT, "data")
+# PACT_DATA_DIR lets a test run read and write a scratch copy instead of the
+# real data/ folder. Unset for every real run.
+DATA = os.environ.get("PACT_DATA_DIR") or os.path.join(ROOT, "data")
 PROMPTS = os.path.join(ROOT, "prompts")
 
 # NCBI allows 3 requests/sec without a key, 10/sec with one.
@@ -309,3 +311,190 @@ def provenance(script_path, extra_files=()):
         print("  NOTE: uncommitted changes present. Commit before a real run so the "
               "version stamp is meaningful.")
     return p
+
+
+# --------------------------------------------------------------------------
+# OpenRouter: one helper for every model call from step 7 onward.
+# (03_screen.py keeps its own call_model so its recorded SHA stays meaningful.)
+# --------------------------------------------------------------------------
+
+OPENROUTER = "https://openrouter.ai/api/v1/"
+
+# Hard ceiling on total spend on this OpenRouter key, across the whole
+# pipeline. Checked before each batch of calls; the script stops, rather than
+# overspends, when the next batch could cross it. The key's own "usage" figure
+# is lifetime spend on the key, which is the right measure as long as the key
+# is used for this project only.
+BUDGET_USD = float(os.environ.get("PACT_BUDGET_USD", "50"))
+
+
+class TruncatedResponse(RuntimeError):
+    """The model stopped at max_tokens; retrying will not help. Still billed."""
+
+    def __init__(self, msg, cost=0.0, partial=""):
+        super().__init__(msg)
+        self.cost = cost
+        self.partial = partial
+
+
+def openrouter_key():
+    k = os.environ.get("OPENROUTER_API_KEY", "")
+    if not k:
+        sys.exit('ERROR: OPENROUTER_API_KEY is not set.\n'
+                 '  Run:  set -a; . ./.env; set +a')
+    return k
+
+
+def openrouter_chat(model, system_prompt, user_text, max_tokens=3000,
+                    tries=4, timeout=300):
+    """
+    One chat completion, temperature 0, JSON mode. Returns (text, cost_usd).
+    Cost comes from OpenRouter's own accounting for the call.
+
+    Hidden reasoning is switched off. Left on, current models can spend the
+    whole max_tokens allowance reasoning about a long input and return an
+    empty answer while billing every token. Seen live on a 43k-character
+    paper: 8,000 reasoning tokens and no content; a 2,000-token reasoning cap
+    was ignored. With reasoning off the same paper returned 10 complete rows
+    for about a third of the cost.
+    """
+    payload = {
+        "model": model, "temperature": 0, "max_tokens": max_tokens,
+        "response_format": {"type": "json_object"},
+        "reasoning": {"enabled": False},
+        "usage": {"include": True},
+        "messages": [{"role": "system", "content": system_prompt},
+                     {"role": "user", "content": user_text}],
+    }
+    headers = {"Authorization": "Bearer " + openrouter_key(),
+               "Content-Type": "application/json",
+               "HTTP-Referer": "https://github.com/Aschoeff613/PACT_Literature_Review",
+               "X-Title": "PACT literature review"}
+    last = None
+    for attempt in range(tries):
+        try:
+            req = urllib.request.Request(OPENROUTER + "chat/completions",
+                                         data=json.dumps(payload).encode(),
+                                         headers=headers)
+            body = json.loads(urllib.request.urlopen(req, timeout=timeout).read())
+            choice = body["choices"][0]
+            cost = float((body.get("usage") or {}).get("cost") or 0)
+            if choice.get("finish_reason") == "length":
+                raise TruncatedResponse(
+                    f"reply hit max_tokens={max_tokens} (cost ${cost:.4f})", cost,
+                    choice["message"].get("content") or "")
+            return choice["message"]["content"], cost
+        except TruncatedResponse:
+            raise
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", "ignore")[:300]
+            last = RuntimeError(f"HTTP {e.code}: {detail}")
+            if e.code in (429, 500, 502, 503, 504):
+                time.sleep(3.0 * (attempt + 1))
+                continue
+            raise last
+        except Exception as e:
+            last = e
+            time.sleep(3.0 * (attempt + 1))
+    raise last
+
+
+def parse_json_reply(text):
+    """Strip code fences or stray prose around a JSON object."""
+    t = (text or "").strip()
+    if t.startswith("```"):
+        t = t.split("```")[1]
+        if t.lower().startswith("json"):
+            t = t[4:]
+        t = t.strip()
+    try:
+        return json.loads(t)
+    except json.JSONDecodeError:
+        i, j = t.find("{"), t.rfind("}")
+        if i >= 0 and j > i:
+            return json.loads(t[i:j + 1])
+        raise
+
+
+def key_spend():
+    """Lifetime spend on the OpenRouter key, in USD."""
+    req = urllib.request.Request(OPENROUTER + "key",
+                                 headers={"Authorization": "Bearer " + openrouter_key()})
+    d = json.loads(urllib.request.urlopen(req, timeout=30).read())["data"]
+    return float(d["usage"])
+
+
+def check_budget(next_batch_estimate_usd, what="next batch"):
+    """Stop the script if the next batch could push spend past BUDGET_USD."""
+    spent = key_spend()
+    if spent + next_batch_estimate_usd > BUDGET_USD:
+        sys.exit(
+            f"\nSTOPPED by budget guard before the {what}.\n"
+            f"  Spent so far on this key: ${spent:.2f}. Next batch estimated at "
+            f"${next_batch_estimate_usd:.2f}. Ceiling PACT_BUDGET_USD=${BUDGET_USD:.2f}.\n"
+            "  Everything done so far is saved; re-running resumes. Raise the\n"
+            "  ceiling deliberately (export PACT_BUDGET_USD=...) only if agreed."
+        )
+    return spent
+
+
+# --------------------------------------------------------------------------
+# Quote verification (protocol v7 step 8, automatic part)
+# --------------------------------------------------------------------------
+
+def _norm_for_match(s):
+    import html
+    import re
+    s = html.unescape(s or "").lower()
+    for a, b in (("’", "'"), ("‘", "'"), ("“", '"'), ("”", '"'),
+                 ("–", "-"), ("—", "-"), (" ", " ")):
+        s = s.replace(a, b)
+    s = re.sub(r"[^a-z0-9%]+", " ", s)      # punctuation and spacing differences
+    return re.sub(r"\s+", " ", s).strip()   # don't count as a mismatch
+
+
+def quote_in_text(quote, text, min_words=6):
+    """
+    True when the quote appears word for word in the source text, ignoring
+    case, punctuation and whitespace. Very short quotes fail: a four-word
+    fragment proves almost nothing about what a paper says.
+    """
+    q = _norm_for_match(quote)
+    return len(q.split()) >= min_words and q in _norm_for_match(text)
+
+
+def salvage_json_list(partial, key):
+    """
+    Recover the complete objects from a JSON reply cut off mid-list, e.g.
+    {"tasks": [{...}, {...}, {"task_na   ->  [{...}, {...}]
+    """
+    i = partial.find(f'"{key}"')
+    if i < 0:
+        return []
+    i = partial.find("[", i)
+    if i < 0:
+        return []
+    dec, out, pos = json.JSONDecoder(), [], i + 1
+    while True:
+        while pos < len(partial) and partial[pos] in " \t\r\n,":
+            pos += 1
+        if pos >= len(partial) or partial[pos] != "{":
+            break
+        try:
+            obj, pos = dec.raw_decode(partial, pos)
+        except json.JSONDecodeError:
+            break
+        out.append(obj)
+    return out
+
+
+def quote_check(quote, text, min_words=6):
+    """
+    'verbatim'  found word for word (case, punctuation, spacing ignored)
+    'too_short' found, but under min_words: too short to prove anything
+    'not_found' not in the text: paraphrased, stitched, or invented
+    """
+    q = _norm_for_match(quote)
+    if not q or q not in _norm_for_match(text):
+        return "not_found"
+    return "verbatim" if len(q.split()) >= min_words else "too_short"

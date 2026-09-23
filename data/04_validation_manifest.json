@@ -1,0 +1,71 @@
+{
+  "run_utc": "2026-09-23T03:30:14Z",
+  "git_version": "e36dcd5-dirty",
+  "script": "04_validate_sample.py",
+  "script_sha256_16": "4cc92d7c922268c3",
+  "common_sha256_16": "cd6483813fa421fd",
+  "python": "3.14.0",
+  "Lit_Review_Web_Interface.html_sha256_16": "e50fed0e7d2fdd05",
+  "decision_id": "2026-09-22-search-tightening",
+  "seed": 20260922,
+  "per_cell": 75,
+  "warmup_per_cell": {
+    "emergency_medicine/kept": 3,
+    "emergency_medicine/dropped": 2,
+    "primary_care/kept": 3,
+    "primary_care/dropped": 2
+  },
+  "blocks": [
+    {
+      "block": 1,
+      "reviewers": [
+        "R1",
+        "R2"
+      ]
+    },
+    {
+      "block": 2,
+      "reviewers": [
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "block": 3,
+      "reviewers": [
+        "R3",
+        "R4"
+      ]
+    },
+    {
+      "block": 4,
+      "reviewers": [
+        "R4",
+        "R5"
+      ]
+    },
+    {
+      "block": 5,
+      "reviewers": [
+        "R5",
+        "R6"
+      ]
+    },
+    {
+      "block": 6,
+      "reviewers": [
+        "R6",
+        "R1"
+      ]
+    }
+  ],
+  "cell_pool_sizes": {
+    "emergency_medicine/kept": 143,
+    "emergency_medicine/dropped": 857,
+    "primary_care/kept": 86,
+    "primary_care/dropped": 914
+  },
+  "screening_manifest_git": "1e7bd2c",
+  "total": 300,
+  "warmup": 10
+}

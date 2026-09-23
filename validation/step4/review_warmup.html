@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PACT step 4 review — Warm-up &middot; 10 papers, read by all six reviewers, not counted</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --panel:#ffffff; --ink:#1c1c1a; --ink-soft:#5c5c58;
+    --border:#e4e2dc; --accent:#2f6f4f; --accent-soft:#e6f2ec;
+    --danger:#a13a2f; --danger-soft:#f7e9e7; --amber:#a3760f; --amber-soft:#faf1e0;
+    --focus:#3b6ea5; --setting:#3b6ea5; --setting-soft:#dceeff;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 14px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#17171a; --panel:#212024; --ink:#eeeeec; --ink-soft:#a6a4a0;
+      --border:#34333a; --accent:#59b989; --accent-soft:#173226;
+      --danger:#e08072; --danger-soft:#33201d; --amber:#e0b361; --amber-soft:#332c17;
+      --focus:#7fa9d6; --setting:#7fa9d6; --setting-soft:#17324b;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box;}
+  html, body{height:100%;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh;
+  }
+  .wrap{max-width:1400px; margin:0 auto; padding:16px 22px 16px; height:100vh; display:flex; flex-direction:column;}
+
+  header{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:10px; flex-wrap:wrap; flex:0 0 auto;}
+  header h1{font-size:21px; margin:0; font-weight:650;}
+  header .sub{font-size:14px; color:var(--ink-soft);}
+
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap;}
+  .toolbar button, .toolbar label.filebtn{
+    font:inherit; font-size:14.5px; padding:8px 14px; border-radius:8px;
+    border:1px solid var(--border); background:var(--panel); color:var(--ink);
+    cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+  }
+  .toolbar button:hover, .toolbar label.filebtn:hover{border-color:var(--focus);}
+  .toolbar input[type=file]{display:none;}
+
+  .layout{display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:20px; flex:1 1 auto; min-height:0;}
+  .main-col{display:flex; flex-direction:column; min-height:0;}
+  .side-col{display:flex; flex-direction:column; gap:10px; min-height:0; overflow:auto;}
+
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:11px 14px; box-shadow:var(--shadow);
+  }
+  .panel h3{font-size:12px; margin:0 0 6px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft);}
+
+  .progress-bar{height:8px; border-radius:5px; background:var(--border); overflow:hidden; margin-bottom:6px;}
+  .progress-fill{height:100%; background:var(--accent); width:0%; transition:width .2s ease;}
+  .progress-label{font-size:13.5px; color:var(--ink-soft); font-variant-numeric:tabular-nums; margin-bottom:6px;}
+
+  .stats{display:flex; flex-direction:column; gap:4px; font-size:13.5px; color:var(--ink-soft);}
+  .stats b{color:var(--ink); font-variant-numeric:tabular-nums;}
+  .dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:1px;}
+  .dot.inc{background:var(--accent);} .dot.exc{background:var(--danger);} .dot.rem{background:var(--ink-soft);}
+
+  /* --- Screening guide panel ------------------------------------------ */
+  .guide{padding:10px 13px 11px;}
+  .guide-title{font-size:11.5px; margin:0 0 7px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--ink-soft);}
+
+  .guide-question{
+    padding:7px 10px; margin-bottom:8px; border-radius:8px;
+    background:var(--bg); border:1px solid var(--border);
+  }
+  .guide-question .qlabel{
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--ink-soft); margin-bottom:2px;
+  }
+  .guide-question p{margin:0; font-size:13.5px; line-height:1.28; font-weight:650; color:var(--ink);}
+
+  .guide-section{padding:0 0 6px 9px; margin-bottom:6px; border-left:2.5px solid var(--border);}
+  .guide-section:last-of-type{margin-bottom:0;}
+  .guide-section.gs-include{border-left-color:var(--accent);}
+  .guide-section.gs-exclude{border-left-color:var(--danger);}
+  .guide-section.gs-scope{border-left-color:var(--border);}
+
+  .gs-label{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px;}
+  .gs-include .gs-label{color:var(--accent);}
+  .gs-exclude .gs-label{color:var(--danger);}
+  .gs-scope .gs-label{color:var(--ink-soft);}
+
+  .gs-desc{font-size:12px; line-height:1.36; color:var(--ink); margin:0 0 5px;}
+  .gs-desc:last-child{margin-bottom:0;}
+  .gs-caption{font-size:10.5px; color:var(--ink-soft); margin:0 0 3px;}
+  .gs-caption-inline{font-size:10.5px; color:var(--ink-soft); font-weight:600;}
+
+  .tag-row{display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px;}
+  .tag-row:last-child{margin-bottom:0;}
+  .tag{
+    font-size:11px; padding:2px 7px; border-radius:6px; line-height:1.3;
+    background:var(--bg); border:1px solid var(--border); color:var(--ink);
+  }
+  .gs-include .tag{border-color:color-mix(in srgb, var(--accent) 45%, var(--border));}
+  .gs-exclude .tag{border-color:color-mix(in srgb, var(--danger) 45%, var(--border));}
+
+  .gs-scope .gs-desc{color:var(--ink-soft); font-size:11.5px;}
+
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:22px 26px; box-shadow:var(--shadow); flex:1 1 auto; display:flex; flex-direction:column; min-height:0; overflow:auto;
+  }
+  .meta{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; flex:0 0 auto;}
+  .chip{
+    font-size:13px; padding:4px 11px; border-radius:999px; border:1px solid var(--border);
+    color:var(--ink-soft); background:var(--bg);
+  }
+  .chip.setting-ed{color:var(--danger); border-color:var(--danger); background:var(--danger-soft);}
+  .chip.setting-pc{color:var(--accent); border-color:var(--accent); background:var(--accent-soft);}
+  .chip.decided-include{color:var(--accent); border-color:var(--accent); background:var(--accent-soft);}
+  .chip.decided-exclude{color:var(--danger); border-color:var(--danger); background:var(--danger-soft);}
+
+  h2.title{font-size:23px; line-height:1.32; margin:0 0 14px; font-weight:650; flex:0 0 auto;}
+  .abstract{font-size:17px; line-height:1.6; color:var(--ink); white-space:pre-wrap; overflow:auto; flex:1 1 auto;}
+  .abstract.empty{color:var(--ink-soft); font-style:italic;}
+  mark.setting-cue{
+    color:inherit; border-radius:2px; padding:0 .08em;
+    box-decoration-break:clone; -webkit-box-decoration-break:clone;
+  }
+  mark.setting-cue{background:var(--setting-soft); border-bottom:2px solid var(--setting);}
+  .highlight-legend{
+    display:flex; flex-direction:column; align-items:flex-start; gap:7px;
+    color:var(--ink-soft); font-size:12px; line-height:1.35;
+  }
+  .highlight-legend .legend-row{display:flex; align-items:center; gap:7px;}
+  .highlight-legend .legend-note{font-size:11px;}
+  .intro-screen{
+    position:fixed; inset:0; z-index:100; overflow:auto; padding:28px 18px;
+    display:flex; align-items:flex-start; justify-content:center; background:var(--bg);
+  }
+  .intro-screen[hidden]{display:none;}
+  .intro-card{
+    width:min(900px,100%); margin:auto; background:var(--panel); border:1px solid var(--border);
+    border-radius:16px; padding:30px; box-shadow:var(--shadow);
+  }
+  .intro-card h1{font-size:26px; margin:0 0 7px;}
+  .intro-card .intro-sub{margin:0 0 22px; color:var(--ink-soft);}
+  .intro-question{font-size:18px; font-weight:650; line-height:1.4; margin:0 0 15px;}
+  .intro-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:0 0 15px;}
+  .intro-type{padding:15px; border:1px solid var(--border); border-radius:10px; background:var(--bg);}
+  .intro-type h2{font-size:16px; margin:0 0 6px;}
+  .intro-type p{font-size:14px; line-height:1.45; margin:0;}
+  .intro-note{font-size:14px; line-height:1.45; padding:12px 14px; margin:0 0 12px;
+    border-left:3px solid var(--accent); background:var(--accent-soft); border-radius:0 8px 8px 0;}
+  .example-block{margin:0 0 12px;}
+  .example-block h2{font-size:16px; margin:0 0 8px;}
+  .example-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+  .example-card{border:1px solid var(--border); border-radius:9px; padding:11px 12px; background:var(--bg);}
+  .example-card strong{display:block; font-size:11px; letter-spacing:.04em; margin-bottom:4px;}
+  .example-card.include{border-left:3px solid var(--accent);}
+  .example-card.include strong{color:var(--accent);}
+  .example-card.exclude{border-left:3px solid var(--danger);}
+  .example-card.exclude strong{color:var(--danger);}
+  .example-card span{font-size:12.5px; line-height:1.38;}
+  .example-note{font-size:11px; color:var(--ink-soft); margin:7px 0 0;}
+  .intro-exclude{font-size:13px; line-height:1.45; color:var(--ink-soft); margin:0 0 18px;}
+  .intro-start{font:inherit; font-size:16px; font-weight:650; color:#fff; background:var(--accent);
+    border:0; border-radius:10px; padding:13px 22px; cursor:pointer;}
+  .intro-start:hover{filter:brightness(1.06);}
+  @media (max-width:680px){.intro-grid,.example-grid{grid-template-columns:1fr}.intro-card{padding:22px;}}
+  .candidate-evidence{
+    display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin:0 0 13px;
+    padding:7px 10px; border-left:3px solid var(--amber); border-radius:0 7px 7px 0;
+    background:var(--amber-soft); color:var(--ink-soft); font-size:12.5px; line-height:1.35;
+  }
+  .candidate-evidence strong{color:var(--ink); font-size:12px; text-transform:uppercase; letter-spacing:.035em;}
+  .candidate-evidence .models{color:var(--amber); font-weight:700;}
+
+  .notes{margin-top:14px; flex:0 0 auto;}
+  .notes label{font-size:13px; color:var(--ink-soft); display:block; margin-bottom:5px;}
+  .notes textarea{
+    width:100%; min-height:42px; resize:vertical; font:inherit; font-size:14.5px;
+    padding:9px 11px; border-radius:8px; border:1px solid var(--border);
+    background:var(--bg); color:var(--ink);
+  }
+
+  .actions{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; flex:0 0 auto;}
+  .actions button{
+    flex:1; min-width:150px; font:inherit; font-size:17px; font-weight:600;
+    padding:15px 18px; border-radius:10px; border:1px solid transparent; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-include{background:var(--accent); color:#fff;}
+  .btn-include:hover{filter:brightness(1.06);}
+  .btn-exclude{background:var(--danger); color:#fff;}
+  .btn-exclude:hover{filter:brightness(1.06);}
+  .btn-skip{background:transparent; border-color:var(--border); color:var(--ink-soft); flex:0 0 auto; min-width:0; padding:15px 20px;}
+  kbd{
+    font-family:inherit; font-size:12px; padding:1px 7px; border-radius:5px;
+    background:rgba(255,255,255,.22); border:1px solid rgba(255,255,255,.35);
+  }
+  .btn-skip kbd{background:var(--bg); border-color:var(--border); color:var(--ink-soft);}
+
+  .navrow{display:flex; justify-content:space-between; align-items:center; margin-top:10px; flex:0 0 auto;}
+  .navrow button{
+    font:inherit; font-size:14px; padding:9px 16px; border-radius:8px;
+    border:1px solid var(--border); background:var(--panel); color:var(--ink-soft); cursor:pointer;
+  }
+  .navrow button:disabled{opacity:.4; cursor:default;}
+  .navrow button:hover:not(:disabled){border-color:var(--focus); color:var(--ink);}
+
+  .jump{display:flex; align-items:center; gap:6px; font-size:14px; color:var(--ink-soft);}
+  .jump input{
+    width:60px; font:inherit; font-size:14px; padding:6px 7px; border-radius:6px;
+    border:1px solid var(--border); background:var(--panel); color:var(--ink); text-align:center;
+  }
+
+  .done-banner{
+    background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent);
+    border-radius:10px; padding:10px 14px; font-size:13.5px;
+  }
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(8px);
+    background:var(--ink); color:var(--bg); font-size:13px; padding:10px 18px; border-radius:999px;
+    opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease; z-index:50;
+    box-shadow:var(--shadow);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  ::selection{background:var(--focus); color:#fff;}
+
+  @media (max-width: 980px){
+    .wrap{height:auto;}
+    .layout{grid-template-columns:1fr;}
+    .side-col{order:-1;}
+  }
+</style>
+</head>
+<body>
+<div class="intro-screen" id="introScreen">
+  <div class="intro-card">
+    <h1>How to review these abstracts</h1>
+    <p class="intro-sub">Warm-up: everyone reads these same 10 papers, then discusses them. They do not count. Read the title and abstract, then choose Include or Exclude.</p>
+    <p class="intro-question">Is clinician reasoning, decision-making, communication, or judgment-dependent work something the paper actually examines?</p>
+    <div class="intro-grid">
+      <section class="intro-type"><h2>1. Cognitive task</h2><p>The thinking itself: noticing, interpreting, recognizing, weighing uncertainty, prioritizing, deciding, communicating, or reconciling information.</p></section>
+      <section class="intro-type"><h2>2. Clinical task requiring judgment</h2><p>The care activity where that thinking occurs: triage, diagnosis, choosing tests or treatment, admission or discharge, handoff, referral, medication review, or follow-up.</p></section>
+    </div>
+    <p class="intro-note"><strong>Simple rule:</strong> Ask what the paper is studying. A medical decision happening in the background is not enough.</p>
+    <section class="example-block">
+      <h2>Clear examples</h2>
+      <div class="example-grid">
+        <div class="example-card exclude"><strong>EXCLUDE</strong><span>Is antibiotic A more effective than antibiotic B?</span></div>
+        <div class="example-card include"><strong>INCLUDE</strong><span>Why do clinicians select antibiotic A rather than antibiotic B?</span></div>
+        <div class="example-card exclude"><strong>EXCLUDE</strong><span>How often does antibiotic A cause adverse effects?</span></div>
+        <div class="example-card include"><strong>INCLUDE</strong><span>Does a decision-support alert change antibiotic selection?</span></div>
+      </div>
+      <p class="example-note">When genuinely uncertain, include the paper for later review.</p>
+    </section>
+    <p class="intro-exclude"><strong>Exclude:</strong> pediatric, dental, ICU/inpatient-only, prehospital, nursing-only or specialty-only work; case reports; editorials; papers about how patients think or decide rather than clinicians; simulations, vignettes, standardized patients, or chart-stimulated recall; and task-difficulty/theory papers with no clinician or clinician-behavior data. The review requires real patient care.</p>
+    <button class="intro-start" id="startReviewBtn">Proceed to screening &rarr;</button>
+  </div>
+</div>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>PACT validation review</h1>
+      <div class="sub">Warm-up &middot; 10 papers, read by all six reviewers, not counted &middot; step 4</div>
+    </div>
+    <div class="toolbar">
+      <button id="instructionsBtn">ⓘ Instructions</button>
+      <label class="filebtn" title="Load a CSV you exported earlier to pick up where you left off">
+        ⤒ Resume from file
+        <input type="file" id="resumeInput" accept=".csv">
+      </label>
+      <button id="exportBtn">⤓ Export CSV</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="main-col">
+      <div class="card">
+        <div class="meta">
+          <span class="chip" id="chipPmid"></span>
+          <span class="chip" id="chipYear"></span>
+          <span class="chip" id="chipJournal"></span>
+          <span class="chip" id="chipSetting"></span>
+          <span class="chip" id="chipDecided" style="display:none;"></span>
+        </div>
+        <h2 class="title" id="fieldTitle"></h2>
+
+        <div class="abstract" id="fieldAbstract"></div>
+
+        <div class="notes">
+          <label for="notesInput">Notes (optional)</label>
+          <textarea id="notesInput" placeholder="Why, if it's not obvious later — e.g. wrong specialty, no cognitive construct, case report only"></textarea>
+        </div>
+
+        <div class="actions">
+          <button class="btn-exclude" id="excludeBtn">✕ Exclude <kbd>E</kbd></button>
+          <button class="btn-skip" id="skipBtn" title="Leave blank and move on">Skip <kbd>S</kbd></button>
+          <button class="btn-include" id="includeBtn">✓ Include <kbd>I</kbd></button>
+        </div>
+      </div>
+
+      <div class="navrow">
+        <button id="prevBtn">← Previous</button>
+        <div class="jump">
+          <span>Go to</span>
+          <input type="number" id="jumpInput" min="1" max="10">
+          <span>/ 10</span>
+        </div>
+        <button id="nextBtn">Next unreviewed →</button>
+      </div>
+    </div>
+
+    <div class="side-col">
+      <div id="doneBanner" class="done-banner" style="display:none;">
+        All 10 papers on this page have a decision. Export whenever you're ready — you can still go back
+        and change an answer with Prev/Next.
+      </div>
+
+      <div class="panel">
+        <h3>Progress</h3>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-label" id="progressLabel">0 / 10 reviewed</div>
+        <div class="stats">
+          <span><span class="dot inc"></span>Include: <b id="statInclude">0</b></span>
+          <span><span class="dot exc"></span>Exclude: <b id="statExclude">0</b></span>
+          <span><span class="dot rem"></span>Remaining: <b id="statRemaining">10</b></span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Setting key</h3>
+        <div class="highlight-legend" aria-label="Highlight legend">
+          <div class="legend-row"><mark class="setting-cue">Setting</mark><span>Emergency or primary-care terms</span></div>
+          <div class="legend-note">The underline marks setting only. Make your own decision from the full abstract.</div>
+        </div>
+      </div>
+
+      <div class="panel guide">
+        <h3 class="guide-title">What counts?</h3>
+
+        <div class="guide-question">
+          <div class="qlabel">Include when</div>
+          <p>The paper actually examines clinician reasoning, decisions, communication, or judgment-dependent work.</p>
+        </div>
+
+        <div class="guide-section gs-include">
+          <div class="gs-label">1. Cognitive task</div>
+          <p class="gs-desc">The thinking itself: interpreting, recognizing, weighing uncertainty, prioritizing, deciding, communicating, or reconciling.</p>
+        </div>
+
+        <div class="guide-section gs-include">
+          <div class="gs-label">2. Clinical task requiring judgment</div>
+          <p class="gs-desc">Where the thinking happens: triage, diagnosis, choosing tests or treatment, admission or discharge, handoff, referral, medication review, or follow-up.</p>
+        </div>
+
+        <div class="guide-section gs-scope">
+          <div class="gs-label">Setting</div>
+          <p class="gs-desc">Adult emergency department or adult primary care. A clinical activity counts only when the abstract also shows clinician thinking or judgment.</p>
+        </div>
+
+        <div class="guide-section gs-exclude">
+          <div class="gs-label">Exclude</div>
+          <p class="gs-desc">The paper only asks whether a treatment or test works, reports outcomes or adverse effects, or never examines clinician work. Also exclude pediatric-only and dental papers; papers about how patients think or decide rather than clinicians; simulations, vignettes, standardized patients, chart-stimulated recall; and task-difficulty/theory papers with no clinician or clinician-behavior data; real patient care is required.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script id="seed-data" type="application/json">[{"reviewer": "WARMUP", "val_no": "W1", "pmid": "27993409", "year": "2017", "journal": "Med Clin (Barc)", "title": "Short- and long-term prognosis of critically-ill patients referred to the ICU from the Emergency Department of a tertiary hospital.", "abstract": "BACKGROUND AND OBJECTIVE: A frequent source of critically-ill patients admitted to the ICU is the Emergency Department. It is essential to analyse the short-term prognosis of these patients, but also their evolution after their discharge from the hospital, since this is one of the major concerns of these patients. The aim of this study is to describe the epidemiological characteristics of patients admitted to the ICU from the Emergency Department and to analyse their outcome. PATIENTS AND METHOD: This consisted of an observational prospective cohorts study which included 269 Emergency Department patients consecutively admitted to the ICU over an 18-month period. Factors associated with hospital mortality were presented as an odds ratio (OR) and factors associated with long-term mortality were presented as a hazard ratio (HR). A P-value lower than .05 was accepted as significant. The overall survival was analysed on the basis of the Kaplan-Meier curves. RESULTS: Hospital mortality was 15%, ICU complications where the variables with the greatest impact on short-term mortality: acute renal failure (OR 22.7) and respiratory distress syndrome (OR 51.2). After hospital discharge, the cumulative mortality at 12, 24 and 36 months was 6, 11 and 15%, respectively. The degree of functional dependence (HR 3.7), cancer (HR 3.4) and arrhythmias (HR 2.4) were factors related to long-term mortality. CONCLUSIONS: The short-term outcome of ICU patients is related to age and comorbidity, but more significantly to the characteristics of the acute illness. However, the long-term outcome is more closely associated with the patients' characteristics.", "source_setting": "emergency_medicine", "human_decision": "", "human_notes": ""}, {"reviewer": "WARMUP", "val_no": "W2", "pmid": "21054747", "year": "2011", "journal": "Colorectal Dis", "title": "Iron deficiency anaemia and delayed diagnosis of colorectal cancer: a retrospective cohort study.", "abstract": "AIM: The extent to which different referral pathways following a primary care diagnosis of iron deficiency anaemia (IDA) are associated with delay in diagnosis of colorectal cancer (CRC) was determined. METHOD: Eligible patients aged 40 or more years, with IDA diagnosed in primary care, and a subsequent diagnosis of CRC, were studied retrospectively. Referral pathways were identified using the specialty of first recorded GP referral following IDA diagnosis. Differences in time to diagnosis of CRC were assessed by referral specialty. Differences in the proportion of cases referred before and after the re-issue of the NICE urgent referral guidelines for suspected lower gastrointestinal (GI) cancer were also assessed. RESULTS: Of 628,882 eligible patients, 3.1% (n = 19,349) were diagnosed with IDA during the study period; 3.0% (n = 578) were subsequently diagnosed with CRC. Two hundred and fifty-nine (44.8%) patients had no recorded referral or a referral unrelated to anaemia or the GI tract. Only 35% (n = 201) of patients were referred to a relevant specialty. Median time to CRC diagnosis ranged from 2.5 months (referral to a relevant surgical specialty) to 31.9 months (haematology). Time to diagnosis was longer in patients referred to a medical compared with a relevant surgical specialty (P = 0.024). There was no significant difference in time to CRC diagnosis before and after the NICE guidelines were re-issued in 2005. CONCLUSION: Significant differences exist between referral specialties in time to CRC diagnosis following a primary care diagnosis of IDA. Despite NICE referral recommendations, a significant proportion of patients are still not managed within recommended care pathways to CRC diagnosis.", "source_setting": "primary_care", "human_decision": "", "human_notes": ""}, {"reviewer": "WARMUP", "val_no": "W3", "pmid": "22672414", "year": "2012", "journal": "BMC Med Inform Decis Mak", "title": "Arriba-lib: evaluation of an electronic library of decision aids in primary care physicians.", "abstract": "BACKGROUND: The successful implementation of decision aids in clinical practice initially depends on how clinicians perceive them. Relatively little is known about the acceptance of decision aids by physicians and factors influencing the implementation of decision aids from their point of view. Our electronic library of decision aids (arriba-lib) is to be used within the encounter and has a modular structure containing evidence-based decision aids for the following topics: cardiovascular prevention, atrial fibrillation, coronary heart disease, oral antidiabetics, conventional and intensified insulin therapy, and unipolar depression. The aim of our study was to evaluate the acceptance of arriba-lib in primary care physicians. METHODS: We conducted an evaluation study in which 29 primary care physicians included 192 patients. The physician questionnaire contained information on which module was used, how extensive steps of the shared decision making process were discussed, who made the decision, and a subjective appraisal of consultation length. We used generalised estimation equations to measure associations within patient variables and traditional crosstab analyses. RESULTS: Only a minority of consultations (8.9%) was considered to be unacceptably extended. In 90.6% of consultations, physicians said that a decision could be made. A shared decision was perceived by physicians in 57.1% of consultations. Physicians said that a decision was more likely to be made when therapeutic options were discussed \"detailed\". Prior experience with decision aids was not a critical variable for implementation within our sample of primary care physicians. CONCLUSIONS: Our study showed that it might be feasible to apply our electronic library of decision aids (arriba-lib) in the primary care context. Evidence-based decision aids offer support for physicians in the management of medical information. Future studies should monitor the long-term adoption of arriba-lib in primary care physicians.", "source_setting": "primary_care", "human_decision": "", "human_notes": ""}, {"reviewer": "WARMUP", "val_no": "W4", "pmid": "21776939", "year": "2011", "journal": "Trustee", "title": "New strategies for psych care.", "abstract": "Growing numbers of patients and shrinking budgets have inspired providers to develop creative solutions, such as offering integrated treatment and fast-tracking ED patients.", "source_setting": "emergency_medicine", "human_decision": "", "human_notes": ""}, {"reviewer": "WARMUP", "val_no": "W5", "pmid": "19288287", "year": "2009", "journal": "Int J Public Health", "title": "Domestic violence: variation in case-management by the general practitioner in Belgium.", "abstract": "OBJECTIVES: to describe the medical interventions and referrals carried out by the general practitioner (GP) when taking care of victims and to quantify the between-physician variability in management of domestic violence. METHODS: A nationwide sentinel network of 150 general practitioners, covering 1.5 % of the Belgian population, registered in 2002-2004 all episodes of domestic violence for which they were consulted, via paper registration forms. A multilevel analysis was carried out by fitting a random effects logistic regression model for every intervention/referral. RESULTS: The most frequent interventions of the GP were providing a certificate of injury (54 %), and making an appointment for a next visit (33 %). Half of the patients were referred or hospitalised upon the first consultation, most frequently they were advised to go to the police (17 %) or referred to a psychologist or psychiatrist (11 %). The intra cluster correlation coefficient (ICC) of the interventions varied between 11 % and 39 % and the median odds ratios between 1,82 and 3,96. CONCLUSIONS: GP consultations for domestic violence are frequent and involve considerable between-physician variability in care.", "source_setting": "primary_care", "human_decision": "", "human_notes": ""}, {"reviewer": "WARMUP", "val_no": "W6", "pmid": "16889457", "year": "2006", "journal": "J Clin Psychiatry", "title": "Using data mining to explore complex clinical decisions: A study of hospitalization after a suicide attempt.", "abstract": "BACKGROUND: Medical education is moving toward developing guidelines using the evidence-based approach; however, controlled data are missing for answering complex treatment decisions such as those made during suicide attempts. A new set of statistical techniques called data mining (or machine learning) is being used by different industries to explore complex databases and can be used to explore large clinical databases. METHOD: The study goal was to reanalyze, using data mining techniques, a published study of which variables predicted psychiatrists' decisions to hospitalize in 509 suicide attempters over the age of 18 years who were assessed in the emergency department. Patients were recruited for the study between 1996 and 1998. Traditional multivariate statistics were compared with data mining techniques to determine variables predicting hospitalization. RESULTS: Five analyses done by psychiatric researchers using traditional statistical techniques classified 72% to 88% of patients correctly. The model developed by researchers with no psychiatric knowledge and employing data mining techniques used 5 variables (drug consumption during the attempt, relief that the attempt was not effective, lack of family support, being a housewife, and family history of suicide attempts) and classified 99% of patients correctly (99% sensitivity and 100% specificity). CONCLUSIONS: This reanalysis of a published study fundamentally tries to make the point that these new multivariate techniques, called data mining, can be used to study large clinical databases in psychiatry. Data mining techniques may be used to explore important treatment questions and outcomes in large clinical databases and to help develop guidelines for problems where controlled data are difficult to obtain. New opportunities for good clinical research may be developed by using data mining analyses.", "source_setting": "emergency_medicine", "human_decision": "", "human_notes": ""}, {"reviewer": "WARMUP", "val_no": "W7", "pmid": "18062789", "year": "2008", "journal": "Emerg Med Australas", "title": "Handover from paramedics: observations and emergency department clinician perceptions.", "abstract": "OBJECTIVES: 1. To evaluate emergency clinician attitudes towards handover from prehospital paramedics. 2. To determine the content and methods of paramedic handover delivery to emergency clinicians. METHODS: Exploratory study comprising questionnaire of emergency clinicians and observation of paramedic-to-emergency clinician handover with associated survey at an adult tertiary referral hospital with approximately 12,000 ambulance arrivals of 37,000 annual attendances. RESULTS: Emergency staff found handover from paramedics on patient conditions relevant, especially for altered consciousness (94%, 95% CI 83.5-98.6), trauma (90%, 95% CI 82.0-98.4) and chest pain (88%, 95% CI 79.0-97.0), but less so for behavioural disturbance (67%, 95% CI 53.7-79.5). A total of 621 handovers from 311 ambulance arrivals were observed. Most arrivals (81%, 95% CI 76.4-85.4) were not preceded by prehospital communication. Paramedics handed over twice 91% of the time (95% CI 88.2-94.4). Doctors received direct paramedic handover for 12% (95% CI 8.0-15.1) of ambulance arrivals, including 19 team handovers, whereas triage nurses took 97% (95% CI 95.6-99.2) and attending nurses, 91% (95% CI 87.5-93.9). Fifty per cent (95% CI 42.7-57.3) of emergency clinicians referred to ambulance sheets. Handover information was perceived to be useful and accurate in more than 80% of instances. Verbal handover occurred before ambulance sheet completion for 78% (95% CI 73.5-82.7). CONCLUSION: Although there is satisfaction in paramedic handover, prehospital notification and emergency physician contact with paramedics is uncommon for low acuity patients, who constitute the majority of ambulance attendances and hospital admissions. Scope for improved direct doctor-paramedic communication exists.", "source_setting": "emergency_medicine", "human_decision": "", "human_notes": ""}, {"reviewer": "WARMUP", "val_no": "W8", "pmid": "41190887", "year": "2025", "journal": "Crit Care Explor", "title": "NeuroRecovery Clinics: A Survey to Understand the Current Landscape and Opinions of Post-NeuroICU Clinics.", "abstract": "OBJECTIVES: Survival following severe acute neurologic injury (SANI) is increasing. The complexities of caring for these patients are vast and gaps have been highlighted in post-acute care follow-up. While the development of post-ICU follow-up clinics have been increasing in popularity there is limited literature describing the landscape of post-neuroICU/NeuroRecovery clinics. We sought to describe the current landscape and identify benefits and barriers to clinic development in the United States. DESIGN: We developed a 19-question cross-sectional survey study. SETTING AND SUBJECTS: The survey was disseminated to clinicians working in neurocritical care units throughout the United States and open for completion from August 2023 to December 2023. Responses were characterized by descriptive statistics. INTERVENTIONS: None. MEASUREMENTS AND MAIN RESULTS: Two hundred eighteen unique individuals responded to our survey. Post-neuroICU and/or NeuroRecovery clinics were uncommon and operational at only 69 of 215 respondents' institutions (32.1%). Forty-two percent reported an interest in engaging with a post-neuroICU clinic and an additional 39% showed interest but had identified other obligations preventing participation. Among the identified potential benefits of a clinic for survivors of SANI mitigating gaps in care, identifying differences between predicted and actual outcome, and reassessment of communication/prognosis ranked highest. CONCLUSIONS: Few post-neuroICU/NeuroRecovery clinics exist in the United States but interest in participating in this aspect of care is common within the neurocritical care community. The identification of gaps in care, obstacles to continued recovery, and potential to adjudicate differences between actual and predicted outcomes ranked among the most important potential benefits for extending the current neurocritical care paradigm to the clinic setting.", "source_setting": "primary_care", "human_decision": "", "human_notes": ""}, {"reviewer": "WARMUP", "val_no": "W9", "pmid": "26830412", "year": "2016", "journal": "Int J Clin Pharm", "title": "Information on actual medication use and drug-related problems in older patients: questionnaire or interview?", "abstract": "BACKGROUND: Information on medication use and drug-related problems is important in the preparation of clinical medication reviews. Critical information can only be provided by patients themselves, but interviewing patients is time-consuming. Alternatively, patient information could be obtained with a questionnaire. OBJECTIVE: In this study the agreement between patient information on medication use and drug-related problems in older patients obtained with a questionnaire was compared with information obtained during an interview. SETTING: General practice in The Netherlands. METHOD: A questionnaire was developed to obtain information on actual medication use and drug-related problems. Two patient groups ≥65 years were selected based on general practitioner electronic medical records in nine practices; I. polypharmacy and II. ≥1 predefined general geriatric problems. Eligible patients were asked to complete the questionnaire and were interviewed afterwards. MAIN OUTCOME MEASURE: Agreement on information on medication use and drug-related problems collected with the questionnaire and interview was calculated. RESULTS: Ninety-seven patients participated. Of all medications used, 87.6 % (95 % CI 84.7-90.5) was reported identically in the questionnaire and interview. Agreement for the complete medication list was found for 45.4 % (95 % CI 35.8-55.3) of the patients. On drug-related problem level, agreement between questionnaire and interview was 75 %. Agreement tended to be lower in vulnerable patients characterized by ≥4 chronic diseases, ≥10 medications used and low health literacy. CONCLUSION: Information from a questionnaire showed reasonable agreement compared with interviewing. The patients reported more medications and drug-related problems in the interview than the questionnaire. Taking the limitations into account, a questionnaire seems a suitable tool for medication reviews that may replace an interview for most patients.", "source_setting": "primary_care", "human_decision": "", "human_notes": ""}, {"reviewer": "WARMUP", "val_no": "W10", "pmid": "31044257", "year": "2020", "journal": "Singapore Med J", "title": "Impact of 24-hour specialist coverage and an on-site CT scanner on the timely diagnosis of acute aortic dissection.", "abstract": "INTRODUCTION: Acute aortic dissection (AAD) is a rare and potentially fatal condition that has been known to be missed in diagnoses. Our primary objective was to determine if the availability of 24-hour emergency department (ED) specialist coverage and an on-site computed tomography (CT) scanner reduced the rate of missed diagnoses of AAD. METHODS: We selected records of patients diagnosed with dissection of the aorta from a hospital's discharge database and death register in the period of January 1998 to December 2014. AAD was defined as missed if imaging to diagnose AAD or a cardiology/cardiothoracic surgical consultation was not obtained in the ED. We compared the rates of missed diagnosis before and after the availability of 24-hour ED specialist coverage and an on-site CT scanner in the ED. RESULTS: Among 145 patients, 42 (29.0%) had a missed diagnosis. The proportion of missed AAD was lower in the post-implementation period compared to the pre-implementation period (20.0% vs. 37.3%, odds ratio [OR] 0.42, 95% confidence interval [CI] 0.20‒0.89; p = 0.023). After adjusting for confounders, the difference remained significant (OR 0.31, 95% CI 0.14‒0.70; p = 0.005). In the post-implementation period, concurrent signs of congestive cardiac failure (OR 33.51, 95% CI 1.42‒789.20; p = 0.024) and absence of a widened mediastinum on chest radiography (OR 11.52, 95% CI 1.37‒96.80; p = 0.029) were independent predictors of missed diagnoses. CONCLUSION: The availability of 24-hour ED specialist coverage and an on-site CT scanner improved the diagnosis of AAD in our study.", "source_setting": "emergency_medicine", "human_decision": "", "human_notes": ""}]</script>
+<script>
+(function(){
+  const COLUMNS = ["reviewer","val_no","pmid","year","journal","title",
+                   "source_setting","human_decision","human_notes"];
+  const CANDIDATE_CUES = [
+    {weight:5, pattern:/\b(?:clinical|diagnostic|medical)\s+(?:reasoning|decision(?:[-\s]?making)?|judg(?:e|ment)|assessment|interpretation)\b/i},
+    {weight:5, pattern:/\b(?:hand ?off|handover|follow[- ]?up|medication reconciliation|risk stratification|triage|disposition)\b/i},
+    {weight:4, pattern:/\b(?:clinician|physician|doctor|prescriber)s?\b/i},
+    {weight:4, pattern:/\b(?:diagnos(?:is|tic|e)|interpret(?:ing|ation)?|decid(?:e|ing|ion)|recogn(?:ise|ize|ition)|prioriti[sz](?:e|ing|ation)|communicat(?:e|ing|ion)|reconcil(?:e|ing|iation)|monitor(?:ing)?)\b/i},
+    {weight:3, pattern:/\b(?:error|miss(?:ed|ing)|delay(?:ed)?|failure|harm|adverse event|unsafe|misdiagnos(?:is|ed)|undertriage|overtriage)\b/i}
+  ];
+
+  const RECORD_OFFSET = 0;
+  const ORIGINAL_TOTAL = 10;
+  const seed = JSON.parse(document.getElementById('seed-data').textContent);
+  // Working state lives in memory only (no localStorage/sessionStorage in this
+  // environment) - "saving" means exporting the CSV, and "resuming" means
+  // loading that CSV back in via the file picker below.
+  let records = seed.map(r => ({
+    pmid: r.pmid, year: r.year, journal: r.journal, title: r.title,
+    abstract: r.abstract, source_setting: r.source_setting,
+    human_decision: (r.human_decision||"").trim(),
+    human_notes: r.human_notes||"",
+    reviewer: r.reviewer||"", val_no: r.val_no||""
+  }));
+
+  let idx = 0;
+
+  const el = id => document.getElementById(id);
+  const toastEl = el('toast');
+  const introScreen = el('introScreen');
+  el('startReviewBtn').onclick = ()=>{ introScreen.hidden = true; };
+  el('instructionsBtn').onclick = ()=>{ introScreen.hidden = false; };
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>toastEl.classList.remove('show'), 1600);
+  }
+
+  function firstUnreviewedFrom(start){
+    for (let i=start; i<records.length; i++) if(!records[i].human_decision) return i;
+    for (let i=0; i<start; i++) if(!records[i].human_decision) return i;
+    return -1;
+  }
+
+  function candidateModels(r){
+    const models = [];
+    if ((r._ai_gpt||'').trim().toLowerCase() === 'include') models.push('GPT');
+    if ((r._ai_claude||'').trim().toLowerCase() === 'include') models.push('Claude');
+    return models;
+  }
+
+  function sentenceSpans(text){
+    const spans = [];
+    const re = /[^.!?]+(?:[.!?]+|$)/g;
+    let match;
+    while ((match = re.exec(text)) !== null){
+      const leading = (match[0].match(/^\s*/) || [''])[0].length;
+      const value = match[0].trim();
+      if (value) spans.push({start:match.index + leading, end:match.index + leading + value.length, value});
+    }
+    return spans;
+  }
+
+  function cueScore(text){
+    return CANDIDATE_CUES.reduce((score, cue) => score + (cue.pattern.test(text) ? cue.weight : 0), 0);
+  }
+
+  function bestCueSpan(text, isTitle){
+    if (!text) return null;
+    const spans = isTitle ? [{start:0, end:text.length, value:text}] : sentenceSpans(text);
+    return spans.map(span => ({...span, score:cueScore(span.value)}))
+      .sort((a,b) => b.score - a.score || a.start - b.start)[0] || null;
+  }
+
+  const SETTING_PATTERN = /\b(?:adults?|emergency department|emergency medicine|EDs?|primary care|primary health care|general practice|general practitioners?|family practice|family physicians?)\b/gi;
+
+  function renderSettingText(node, text){
+    node.replaceChildren();
+    const ranges = [];
+    const settingPattern = new RegExp(SETTING_PATTERN.source, SETTING_PATTERN.flags);
+    let match;
+    while ((match = settingPattern.exec(text)) !== null){
+      ranges.push({start:match.index, end:match.index + match[0].length, type:'setting-cue'});
+    }
+    if (!ranges.length){ node.textContent = text; return; }
+    const boundaries = [...new Set([0, text.length, ...ranges.flatMap(r=>[r.start,r.end])])].sort((a,b)=>a-b);
+    for (let i=0; i<boundaries.length-1; i++){
+      const start = boundaries[i], end = boundaries[i+1];
+      if (end <= start) continue;
+      const classes = ranges.filter(r=>r.start < end && r.end > start).map(r=>r.type);
+      const value = text.slice(start,end);
+      if (!classes.length){ node.append(document.createTextNode(value)); continue; }
+      const mark = document.createElement('mark');
+      mark.className = [...new Set(classes)].join(' ');
+      mark.textContent = value;
+      node.append(mark);
+    }
+  }
+
+  function render(){
+    const r = records[idx];
+    el('chipPmid').textContent = 'PMID ' + r.pmid;
+    el('chipYear').textContent = r.year;
+    el('chipJournal').textContent = r.journal;
+    const settingChip = el('chipSetting');
+    settingChip.textContent = r.source_setting;
+    settingChip.className = 'chip ' + (/emergency/i.test(r.source_setting) ? 'setting-ed' : 'setting-pc');
+
+    const decChip = el('chipDecided');
+    if (r.human_decision){
+      decChip.style.display = 'inline-block';
+      decChip.textContent = r.human_decision === 'include' ? '✓ included' : '✕ excluded';
+      decChip.className = 'chip ' + (r.human_decision === 'include' ? 'decided-include' : 'decided-exclude');
+    } else {
+      decChip.style.display = 'none';
+    }
+
+    renderSettingText(el('fieldTitle'), r.title);
+    const abs = el('fieldAbstract');
+    if (r.abstract && r.abstract.trim()){
+      renderSettingText(abs, r.abstract);
+      abs.classList.remove('empty');
+    } else {
+      abs.textContent = 'No abstract available for this record — title only.';
+      abs.classList.add('empty');
+    }
+    el('notesInput').value = r.human_notes || '';
+    el('jumpInput').value = RECORD_OFFSET + idx + 1;
+
+    el('prevBtn').disabled = idx === 0;
+    updateProgress();
+  }
+
+  function updateProgress(){
+    const reviewed = records.filter(r=>r.human_decision).length;
+    const inc = records.filter(r=>r.human_decision==='include').length;
+    const exc = records.filter(r=>r.human_decision==='exclude').length;
+    el('progressFill').style.width = (100*reviewed/records.length)+'%';
+    el('progressLabel').textContent = reviewed + ' / ' + records.length + ' reviewed';
+    el('statInclude').textContent = inc;
+    el('statExclude').textContent = exc;
+    el('statRemaining').textContent = records.length - reviewed;
+    el('doneBanner').style.display = reviewed === records.length ? 'block' : 'none';
+  }
+
+  function decide(decision){
+    records[idx].human_decision = decision;
+    records[idx].human_notes = el('notesInput').value;
+    const next = firstUnreviewedFrom(idx+1);
+    if (next === -1){
+      updateProgress();
+      toast(decision === 'include' ? 'Marked include — that was the last one' : 'Marked exclude — that was the last one');
+      render();
+    } else {
+      idx = next;
+      toast(decision === 'include' ? 'Marked include' : 'Marked exclude');
+      render();
+    }
+  }
+
+  function skip(){
+    records[idx].human_notes = el('notesInput').value;
+    const next = firstUnreviewedFrom(idx+1);
+    idx = (next === -1) ? Math.min(idx+1, records.length-1) : next;
+    render();
+  }
+
+  el('includeBtn').onclick = ()=>decide('include');
+  el('excludeBtn').onclick = ()=>decide('exclude');
+  el('skipBtn').onclick = skip;
+  el('prevBtn').onclick = ()=>{ records[idx].human_notes = el('notesInput').value; idx = Math.max(0, idx-1); render(); };
+  el('nextBtn').onclick = ()=>{
+    records[idx].human_notes = el('notesInput').value;
+    const next = firstUnreviewedFrom(idx+1);
+    idx = next === -1 ? Math.min(idx+1, records.length-1) : next;
+    render();
+  };
+  el('jumpInput').addEventListener('change', e=>{
+    let v = parseInt(e.target.value, 10);
+    if (isNaN(v)) return;
+    v = Math.max(RECORD_OFFSET + 1, Math.min(RECORD_OFFSET + records.length, v));
+    records[idx].human_notes = el('notesInput').value;
+    idx = v - RECORD_OFFSET - 1;
+    render();
+  });
+
+  document.addEventListener('keydown', e=>{
+    if (!introScreen.hidden) return;
+    if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') {
+      if (e.key === 'Escape') document.activeElement.blur();
+      return;
+    }
+    if (e.key === 'i' || e.key === 'I') decide('include');
+    else if (e.key === 'e' || e.key === 'E') decide('exclude');
+    else if (e.key === 's' || e.key === 'S') skip();
+    else if (e.key === 'ArrowRight') el('nextBtn').click();
+    else if (e.key === 'ArrowLeft') el('prevBtn').click();
+  });
+
+  // ---- CSV export / import --------------------------------------------
+  function csvEscape(v){
+    v = (v===undefined || v===null) ? '' : String(v);
+    if (/[",\n\r]/.test(v)) return '"' + v.replace(/"/g,'""') + '"';
+    return v;
+  }
+  function toCSV(rows){
+    const lines = [COLUMNS.join(',')];
+    for (const r of rows) lines.push(COLUMNS.map(c=>csvEscape(r[c])).join(','));
+    return lines.join('\r\n');
+  }
+  function download(filename, text){
+    const blob = new Blob(['﻿'+text], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  el('exportBtn').onclick = ()=>{
+    records[idx].human_notes = el('notesInput').value;
+    const stamp = new Date().toISOString().slice(0,10);
+    download('step4_warmup.csv', toCSV(records));
+    toast('Exported — safe to close this tab');
+  };
+
+  // Minimal CSV parser: handles quoted fields, escaped quotes, commas and
+  // newlines inside quotes. Good enough for a file this shape produced.
+  function parseCSV(text){
+    const rows = [];
+    let row = [], field = '', inQuotes = false;
+    for (let i=0; i<text.length; i++){
+      const c = text[i];
+      if (inQuotes){
+        if (c === '"'){
+          if (text[i+1] === '"'){ field += '"'; i++; }
+          else inQuotes = false;
+        } else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === ','){ row.push(field); field=''; }
+        else if (c === '\r'){ /* skip */ }
+        else if (c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+        else field += c;
+      }
+    }
+    if (field.length || row.length){ row.push(field); rows.push(row); }
+    if (!rows.length) return [];
+    let header = rows[0].map(h=>h.replace(/^﻿/,'').trim());
+    return rows.slice(1).filter(r=>r.length>1 || r[0]!=='').map(r=>{
+      const obj = {};
+      header.forEach((h,i)=>obj[h]=r[i]!==undefined?r[i]:'');
+      return obj;
+    });
+  }
+
+  el('resumeInput').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      let parsed;
+      try { parsed = parseCSV(ev.target.result); }
+      catch(err){ toast('Could not read that file as CSV'); return; }
+      const byPmid = {};
+      parsed.forEach(p=>{ if(p.pmid) byPmid[String(p.pmid).trim()] = p; });
+      let merged = 0;
+      records.forEach(r=>{
+        const p = byPmid[String(r.pmid).trim()];
+        if (p){
+          if ((p.human_decision||'').trim()){ r.human_decision = p.human_decision.trim(); merged++; }
+          if ((p.human_notes||'').trim()) r.human_notes = p.human_notes;
+        }
+      });
+      idx = firstUnreviewedFrom(0);
+      if (idx === -1) idx = 0;
+      render();
+      toast('Resumed: ' + merged + ' prior decisions loaded');
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

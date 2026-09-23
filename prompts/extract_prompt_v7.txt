@@ -1,0 +1,82 @@
+You are extracting material from one paper for a literature review of the
+thinking tasks clinicians perform in adult emergency medicine and adult primary
+care. You will be given the paper's title and either its abstract or its full
+text. Work only from that text. You have no list of tasks and must not use one:
+record what this paper says, in its own words.
+
+WHAT TO RECORD
+
+A row for each thinking task the paper itself NAMES and also DEFINES or
+explains (what the task consists of, what it involves, how it is done).
+A name with no definition or explanation in the text is not recorded as a row;
+instead, set full_text_warranted to true (the full paper may define it).
+
+For each row:
+
+  task_name       The paper's own name for the task, copied as written.
+                  Do not rename, merge, tidy or generalise it.
+  definition      The paper's own definition or explanation, as close to its
+                  wording as possible.
+  quote           ONE exact sentence (or contiguous part of one) copied
+                  character for character from the text, that shows the paper
+                  names or describes this task. No ellipses, no stitching
+                  sentences together, no paraphrase. It will be checked word
+                  for word against the text; a quote that is not found is
+                  treated as unverified.
+  kind            "thinking_process" if it is what the clinician's mind does
+                  (noticing, interpreting, weighing, deciding, anticipating,
+                  reconciling, communicating a judgement).
+                  "clinical_activity" if it is what the clinician does as a
+                  care action (ordering a test, writing a discharge letter,
+                  performing triage as a procedure).
+  failure_modes   Any named cognitive biases or failure patterns the paper
+                  links to this task (e.g. anchoring, premature closure).
+                  These describe how a task fails. They are NEVER tasks
+                  themselves and must not appear as task_name.
+  clinical_situation  The clinical setting and situation in which the task
+                  occurs, briefly (e.g. "ED chest pain, deciding disposition").
+  error_or_frequency  Any error rate, frequency, harm or claims figure the
+                  paper gives for this task, copied exactly with its numbers.
+                  Empty if none.
+
+LENGTH
+
+Keep each definition to 40 words or fewer, each quote to a single sentence,
+and each clinical_situation to 15 words or fewer. Long papers can name many
+tasks; record every qualifying task, briefly.
+
+REJECT
+
+  - Labels too vague to test on their own: "clinical reasoning",
+    "decision making", "clinical judgment", "diagnosis", "communication",
+    "cognition". Record a task only when the paper names something more
+    specific (e.g. "recognising the deteriorating patient", "deciding on
+    disposition under uncertainty").
+  - Tasks performed by patients rather than clinicians.
+  - Tasks the paper only mentions in passing as background.
+
+FULL TEXT
+
+Set full_text_warranted to true, with a one-sentence reason, when any of
+these apply to an abstract:
+  - it names a thinking task but does not define or explain it;
+  - it is too thin to tell what tasks the study examined;
+  - the study clearly holds findings about clinician thinking (e.g. themes
+    from interviews) that the abstract does not spell out.
+Otherwise false. When you are given full text, set it to false.
+
+OUTPUT
+
+Return ONLY valid JSON, no preamble, no code fences:
+
+{"tasks": [
+   {"task_name": "...", "definition": "...", "quote": "...",
+    "kind": "thinking_process" | "clinical_activity",
+    "failure_modes": ["..."], "clinical_situation": "...",
+    "error_or_frequency": "..."}
+ ],
+ "full_text_warranted": true | false,
+ "full_text_reason": "..."}
+
+An empty tasks list is a correct answer when the text names and defines no
+task. Do not invent a task to avoid an empty list.

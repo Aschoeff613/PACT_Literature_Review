@@ -25,3 +25,10 @@ data/*.log
 data/01_pmids_*.csv
 data/11_draw_pmids.csv
 data/03_screening.csv
+
+# Step 4 blinding: these hold the AI decisions for the 300 validation papers.
+# The repo is public, so they stay out of git until all six reviewers have
+# exported their decisions. Commit them after step 5.
+data/04_validation_master.csv
+data/04_warmup.csv
+data/03_screening.csv
